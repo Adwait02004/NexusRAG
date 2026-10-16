@@ -86,6 +86,14 @@ class RAGSearch:
         if not self.groq_api_key:
             print("[WARN] GROQ_API_KEY is not set in environment or .env file.")
 
+        # Initialize PostgreSQL Vector Database connection (with graceful fallback)
+        try:
+            from rag.database import PostgresVectorDB
+            self.pg_db = PostgresVectorDB()
+        except Exception as e_db:
+            print(f"[INFO] PostgreSQL client not initialized: {e_db}")
+            self.pg_db = None
+
     @property
     def reranker(self) -> DocumentReranker:
         """Lazy load Cross-Encoder model to conserve startup resources."""
@@ -120,6 +128,24 @@ class RAGSearch:
         if docs:
             self.vectorstore.add_documents(docs)
             self.hybrid.reload()
+
+            # Mirror to secure PostgreSQL vectorstore if connected
+            if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected:
+                p = Path(file_path)
+                try:
+                    raw_bytes = p.read_bytes()
+                    chunks = self.vectorstore.embedding_manager.split_documents(docs)
+                    embeddings = self.vectorstore.embedding_manager.embed_documents(chunks)
+                    self.pg_db.store_document(
+                        filename=p.name,
+                        file_type=p.suffix.lstrip(".").lower() or "txt",
+                        raw_bytes=raw_bytes,
+                        chunks=chunks,
+                        embeddings=embeddings
+                    )
+                except Exception as e_pg:
+                    print(f"[WARN] Failed to mirror document {p.name} to PostgreSQL: {e_pg}")
+
         return self.vectorstore.get_stats()
 
     def remove_document(self, doc_name: str) -> Dict[str, Any]:
@@ -140,6 +166,15 @@ class RAGSearch:
 
         # 3. Fast reload BM25 lexical index in memory
         self.hybrid.reload()
+
+        # 4. Remove from PostgreSQL if connected
+        if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected:
+            try:
+                from sqlalchemy import text
+                with self.pg_db.engine.begin() as conn:
+                    conn.execute(text("DELETE FROM documents WHERE filename = :fname"), {"fname": doc_name})
+            except Exception as e_del:
+                print(f"[WARN] Failed to delete from PostgreSQL: {e_del}")
 
         return self.vectorstore.get_stats()
 
@@ -198,6 +233,14 @@ class RAGSearch:
                 citations.extend(external_results)
             except Exception as e:
                 print(f"[WARN] External search failed: {e}")
+
+        # Record audit trail in PostgreSQL if connected
+        if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected:
+            self.pg_db.log_audit(
+                query_text=query,
+                retrieval_mode=mode,
+                top_chunks_count=len(citations)
+            )
 
         return citations
 

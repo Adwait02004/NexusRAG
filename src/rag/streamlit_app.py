@@ -756,6 +756,9 @@ elif use_reranker:
 else:
     pipeline_status = f"{retrieval_mode.capitalize()} RAG (Local Docs Only)"
 
+is_pg_live = bool(hasattr(rag, "pg_db") and rag.pg_db and rag.pg_db.is_connected)
+db_label = "PostgreSQL (pgvector)" if is_pg_live else "FAISS VectorStore"
+
 st.markdown(f"""
     <div class="chatgpt-topbar">
         <div class="topbar-brand">
@@ -766,6 +769,9 @@ st.markdown(f"""
             <div class="status-pill">
                 <span class="status-pulse"></span>
                 <span>{pipeline_status}</span>
+            </div>
+            <div class="model-tag" style="border-color: {'rgba(16, 185, 129, 0.35)' if is_pg_live else 'rgba(99, 102, 241, 0.3)'}; color: {'#34d399' if is_pg_live else '#c7d2fe'};">
+                {db_label}
             </div>
             <div class="model-tag">
                 {selected_model_name.split(' ')[0]}

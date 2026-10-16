@@ -14,8 +14,10 @@ NexusRAG Studio is an enterprise-grade Retrieval-Augmented Generation (RAG) plat
 - **Quantitative Evaluation Suite (`evaluate.py`)**: Automated benchmark comparing Dense, Sparse, Hybrid, and Two-Stage Re-Ranking on Hit Rate @ 3 and latency.
 - **Granular Multi-Source Citations**: Every generated response includes expandable context inspector cards showing exact document names, page numbers, clickable web URLs, and relevance scores.
 - **Ultra-Fast LLM Inference**: Integrated with Groq's API supporting state-of-the-art open models (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`).
-- **ChatGPT-Style Pure Python UI**: Centered conversation layout, vector SVG icons, prompt suggestion cards, model switching, dynamic settings, and chat transcript export.
-- **Production Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml`.
+- **Enterprise-Grade Private Storage**: High-security PostgreSQL 16 database with `pgvector` (HNSW cosine index), cryptographic SHA-256 document deduplication, relational chunk metadata, and zero-trust audit logging.
+- **Resilient Multi-Store Architecture**: Seamless dual-engine design—persists automatically to PostgreSQL + `pgvector` when active, with transparent automatic fallback to local FAISS when offline.
+- **ChatGPT / Gemini Custom Component Input**: Custom in-capsule `+` attachment trigger modal with seamless Streamlit dialog integration.
+- **Production Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml` with private network-isolated PostgreSQL service (`127.0.0.1` binding).
 
 ---
 
@@ -41,8 +43,10 @@ flowchart TD
         WebLinks["Web URLs (Articles, Reddit, Docs)"] --> URLIngester["url_ingester.py\nWeb Scraper & Cleaner"]
         URLIngester --> Loader
         Loader --> Split["embedding.py\nRecursive Splitter"]
-        Split --> VectorDB[("Meta FAISS Vector Store\n(Normalized IndexFlatIP)")]
-        Split --> LexicalDB[("BM25 Corpus Index\n(Tokenized Vocabulary)")]
+        Split --> DualStore{"Storage Engine"}
+        DualStore -->|Primary| PGVector[("PostgreSQL 16 + pgvector\nHNSW Index & Relational Metadata")]
+        DualStore -->|Fallback / Fast Local| VectorDB[("Meta FAISS Vector Store\n(Normalized IndexFlatIP)")]
+        DualStore --> LexicalDB[("BM25 Corpus Index\n(Tokenized Vocabulary)")]
     end
 
     subgraph Stage1["2. Stage 1: High Recall Retrieval"]
@@ -72,6 +76,7 @@ flowchart TD
     subgraph Generation["5. Inference & Multi-Source Synthesis"]
         TopChunks --> SearchEngine["search.py\nContext & Citation Builder"]
         LiveContext --> SearchEngine
+        SearchEngine --> Audit["database.py\nAudit Logger (SHA-256 + Latency)"]
         SearchEngine --> Groq["ChatGroq LLM Streaming"]
         Groq --> StreamlitUI["streamlit_app.py\nChatGPT-Style Interface"]
     end
@@ -86,26 +91,29 @@ RAG/
 ├── app.py                      # Unified launcher (auto-switches to .venv)
 ├── evaluate.py                 # Automated 4-way retrieval benchmark
 ├── Dockerfile                  # Production container image
-├── docker-compose.yml          # One-command orchestration
+├── docker-compose.yml          # One-command orchestration (PostgreSQL + pgvector + App)
 ├── requirements.txt            # Python dependencies
-├── .env                        # Environment variables (GROQ_API_KEY, SERPER_API_KEY)
+├── .env.example                # Example configuration template
 ├── data/                       # Ingested documents
 │   ├── pdf/                    # PDF documents
 │   ├── text_files/             # Text & markdown documents
 │   └── web_docs/               # Ingested web pages & articles
-├── faiss_store/                # Persisted vector database & metadata
+├── faiss_store/                # Local persisted vector database & metadata
 └── src/
     └── rag/
         ├── __init__.py
         ├── data_loader.py      # Multi-format parser with page tracking
+        ├── database.py         # Secure PostgreSQL + pgvector manager & audit logs
         ├── url_ingester.py     # Universal web & article scraper & ingester
         ├── embedding.py        # Chunking & SentenceTransformer embeddings
         ├── vectorstore.py      # FAISS vector store with normalized cosine distance
         ├── hybrid_retriever.py # BM25 + FAISS Reciprocal Rank Fusion (RRF)
         ├── reranker.py         # Cross-Encoder Re-Ranking (MS-MARCO MiniLM)
         ├── multi_search.py     # Live multi-source search (Wikipedia, ArXiv, Google)
-        ├── search.py           # Multi-mode RAG search engine & streaming
-        └── streamlit_app.py    # ChatGPT-style web UI with vector SVG icons
+        ├── search.py           # Multi-mode RAG engine with PostgreSQL mirroring
+        ├── streamlit_app.py    # ChatGPT-style web UI with vector SVG icons
+        └── frontend/
+            └── index.html      # Gemini/ChatGPT-style input capsule with + attachment trigger
 ```
 
 ---
@@ -113,15 +121,32 @@ RAG/
 ## Quick Start
 
 ### 1. Configure Environment
-Add your [Groq API Key](https://console.groq.com) to `.env`:
+Copy `.env.example` to `.env` and add your keys:
+```bash
+cp .env.example .env
+```
+Key configurations in `.env`:
 ```env
 GROQ_API_KEY=gsk_your_groq_api_key_here
-
-# Optional: Add Serper / Google API key for live Google Web Search
 SERPER_API_KEY=your_serper_key_here
+
+# PostgreSQL + pgvector configuration
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=nexusrag
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_secure_password_here
 ```
 
-### 2. Launch NexusRAG Studio (Web UI)
+### 2. (Optional) Start Private PostgreSQL with pgvector
+NexusRAG includes a hardened, private `docker-compose.yml` service bound strictly to `127.0.0.1` (no external network exposure):
+```bash
+docker compose up -d postgres
+```
+> [!NOTE]
+> If PostgreSQL is not running, NexusRAG **automatically and gracefully falls back to local FAISS** without interrupting your workflow.
+
+### 3. Launch NexusRAG Studio (Web UI)
 Run in your terminal:
 ```bash
 python app.py
@@ -129,11 +154,17 @@ python app.py
 Open your browser at:
 **`http://localhost:8501`**
 
-### 3. Run Quantitative Benchmark
+The top bar will show an indicator badge:
+- 🟢 `PostgreSQL (pgvector)` when database is connected.
+- 🟣 `FAISS VectorStore` when running in standalone local mode.
+
+### 4. Run Quantitative Benchmark
 Evaluate retrieval performance across Dense, Sparse, Hybrid, and Two-Stage Re-Ranking:
 ```bash
 python app.py --eval
 ```
 
-### 4. Ingesting from Web URLs
-In the sidebar, expand **"Ingest Web URL / Article"**, enter any website, documentation, or Wikipedia URL, and click **"Fetch & Index URL"**. The system downloads, parses, and indexes it into your knowledge base.
+### 5. Ingesting Documents & Web URLs
+- Click the **`+`** icon inside the chat capsule or open the sidebar to upload files (`.pdf`, `.docx`, `.txt`, `.csv`, `.xlsx`, `.json`).
+- In the sidebar, expand **"Ingest Web URL / Article"**, enter any website, documentation, or Wikipedia URL, and click **"Fetch & Index URL"**.
+

@@ -6,7 +6,47 @@ services:
       - "8501:8501"
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - POSTGRES_HOST=nexusrag-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-nexusrag_db}
+      - POSTGRES_USER=${POSTGRES_USER:-nexus_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-nexus_secure_password_2026}
     volumes:
       - ./data:/app/data
       - ./faiss_store:/app/faiss_store
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nexus_internal
     restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nexusrag-postgres
+    # Security: bind to 127.0.0.1 only (no public exposure)
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-nexusrag_db}
+      - POSTGRES_USER=${POSTGRES_USER:-nexus_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-nexus_secure_password_2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nexus_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexus_user} -d ${POSTGRES_DB:-nexusrag_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  nexus_internal:
+    driver: bridge
