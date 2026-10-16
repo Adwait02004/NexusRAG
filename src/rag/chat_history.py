@@ -1,0 +1,134 @@
+import os
+import json
+import time
+import uuid
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+
+class ChatHistoryManager:
+    """
+    Manages persistent user chat sessions stored on disk as JSON files.
+    Allows loading, updating, listing, and deleting conversations just like ChatGPT.
+    """
+    def __init__(self, storage_dir: Optional[Path | str] = None):
+        if storage_dir is None:
+            # Default to data/chats under project root
+            project_root = Path(__file__).resolve().parents[2]
+            storage_dir = project_root / "data" / "chats"
+        
+        self.storage_dir = Path(storage_dir)
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Ensure .gitkeep exists
+        gitkeep = self.storage_dir / ".gitkeep"
+        if not gitkeep.exists():
+            try:
+                gitkeep.touch()
+            except Exception:
+                pass
+
+    @staticmethod
+    def generate_chat_id() -> str:
+        """Create a sortable, unique chat identifier."""
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        rand_suffix = uuid.uuid4().hex[:6]
+        return f"chat_{timestamp}_{rand_suffix}"
+
+    def list_chats(self) -> List[Dict[str, Any]]:
+        """List all saved conversations, sorted with the most recent first."""
+        chats = []
+        if not self.storage_dir.exists():
+            return chats
+
+        for file_path in self.storage_dir.glob("*.json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    chats.append({
+                        "id": data.get("id", file_path.stem),
+                        "title": data.get("title", "Untitled Chat"),
+                        "created_at": data.get("created_at", file_path.stat().st_ctime),
+                        "updated_at": data.get("updated_at", file_path.stat().st_mtime),
+                        "message_count": len(data.get("messages", []))
+                    })
+            except Exception as e:
+                print(f"[WARN] Failed to read chat history {file_path.name}: {e}")
+
+        # Sort descending by updated_at
+        chats.sort(key=lambda x: x["updated_at"], reverse=True)
+        return chats
+
+    def load_chat(self, chat_id: str) -> Optional[Dict[str, Any]]:
+        """Load messages and metadata for a specific chat."""
+        file_path = self.storage_dir / f"{chat_id}.json"
+        if not file_path.exists():
+            return None
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[ERROR] Failed to load chat {chat_id}: {e}")
+            return None
+
+    def save_chat(
+        self,
+        chat_id: str,
+        messages: List[Dict[str, Any]],
+        title: Optional[str] = None
+    ) -> None:
+        """Atomically persist or update conversation messages and metadata."""
+        if not messages:
+            return
+
+        file_path = self.storage_dir / f"{chat_id}.json"
+        existing_data = {}
+        if file_path.exists():
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    existing_data = json.load(f)
+            except Exception:
+                existing_data = {}
+
+        # Derive title from first user message if not provided
+        if not title:
+            title = existing_data.get("title")
+            if not title:
+                for m in messages:
+                    if m.get("role") == "user":
+                        raw_title = m.get("content", "").strip()
+                        # Clean title
+                        cleaned = " ".join(raw_title.splitlines())
+                        title = cleaned[:40] + ("..." if len(cleaned) > 40 else "")
+                        break
+            if not title:
+                title = "New Conversation"
+
+        now = time.time()
+        chat_payload = {
+            "id": chat_id,
+            "title": title,
+            "created_at": existing_data.get("created_at", now),
+            "updated_at": now,
+            "messages": messages
+        }
+
+        temp_path = self.storage_dir / f"{chat_id}.tmp"
+        try:
+            with open(temp_path, "w", encoding="utf-8") as f:
+                json.dump(chat_payload, f, ensure_ascii=False, indent=2)
+            temp_path.replace(file_path)
+        except Exception as e:
+            print(f"[ERROR] Failed to save chat {chat_id}: {e}")
+            if temp_path.exists():
+                temp_path.unlink()
+
+    def delete_chat(self, chat_id: str) -> bool:
+        """Delete a saved chat history file."""
+        file_path = self.storage_dir / f"{chat_id}.json"
+        if file_path.exists():
+            try:
+                file_path.unlink()
+                return True
+            except Exception as e:
+                print(f"[ERROR] Failed to delete chat {chat_id}: {e}")
+        return False

@@ -14,6 +14,7 @@ if str(PROJECT_DIR) not in sys.path:
 
 from rag.search import RAGSearch, AVAILABLE_MODELS, DEFAULT_GROQ_MODEL
 from rag.url_ingester import URLIngester
+from rag.chat_history import ChatHistoryManager
 from evaluate import EVALUATION_DATASET
 
 st.set_page_config(
@@ -128,7 +129,7 @@ section[data-testid="stSidebar"] .block-container {
     max-width: 175px;
 }
 
-/* Minimal Close Button in Document List */
+/* Minimal Close Button in Document List and Chat Deletion */
 div[data-testid="stSidebar"] div[data-testid="column"]:last-child button {
     padding: 2px 6px !important;
     min-height: 26px !important;
@@ -143,6 +144,39 @@ div[data-testid="stSidebar"] div[data-testid="column"]:last-child button:hover {
     color: #f87171 !important;
     border-color: rgba(239, 68, 68, 0.3) !important;
     background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Sidebar Recent Chats List Styling */
+div[data-testid="stSidebar"] div[data-testid="column"]:first-child button[kind="secondary"][data-testid*="baseButton"] {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    padding: 6px 10px !important;
+    min-height: 32px !important;
+    font-size: 0.81rem !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    color: #cbd5e1 !important;
+    margin-bottom: 3px !important;
+}
+
+div[data-testid="stSidebar"] div[data-testid="column"]:first-child button[kind="primary"][data-testid*="baseButton"] {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    padding: 6px 10px !important;
+    min-height: 32px !important;
+    font-size: 0.81rem !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    background: rgba(99, 102, 241, 0.22) !important;
+    border: 1px solid rgba(99, 102, 241, 0.45) !important;
+    color: #ffffff !important;
+    margin-bottom: 3px !important;
 }
 
 /* Minimalist ChatGPT Topbar */
@@ -613,7 +647,19 @@ def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrie
         kwargs["enable_web_search"] = enable_web_search
     return rag_engine.stream_query(query, **kwargs)
 
-# Initialize Chat History
+# Initialize Persistent Chat History Manager
+chat_mgr = ChatHistoryManager(PROJECT_DIR / "data" / "chats")
+if "current_chat_id" not in st.session_state:
+    # Look for most recent chat or create new
+    existing_chats = chat_mgr.list_chats()
+    if existing_chats:
+        st.session_state.current_chat_id = existing_chats[0]["id"]
+        loaded = chat_mgr.load_chat(st.session_state.current_chat_id)
+        st.session_state.messages = loaded.get("messages", []) if loaded else []
+    else:
+        st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
+        st.session_state.messages = []
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -643,10 +689,46 @@ with st.sidebar:
     # New Chat Button (Prominent at top like ChatGPT)
     st.markdown('<div class="new-chat-btn">', unsafe_allow_html=True)
     if st.button("+  New chat", use_container_width=True):
+        st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
         st.session_state.messages = []
         st.session_state.pop("pending_prompt", None)
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+
+    # Recent Chats Section (Persisted across sessions)
+    saved_chats = chat_mgr.list_chats()
+    if saved_chats:
+        st.markdown('<div class="sidebar-section-title">Recent Chats</div>', unsafe_allow_html=True)
+        for c_entry in saved_chats[:12]:
+            c_id = c_entry["id"]
+            c_title = c_entry["title"]
+            is_active = (c_id == st.session_state.get("current_chat_id"))
+
+            col_c_btn, col_c_del = st.columns([5, 1])
+            with col_c_btn:
+                btn_type = "primary" if is_active else "secondary"
+                # Display title with chat bubble icon
+                display_label = c_title if len(c_title) <= 20 else c_title[:18] + "..."
+                if st.button(
+                    f"💬 {display_label}",
+                    key=f"c_nav_{c_id}",
+                    use_container_width=True,
+                    type=btn_type,
+                    help=c_title
+                ):
+                    if not is_active:
+                        chat_data = chat_mgr.load_chat(c_id)
+                        if chat_data:
+                            st.session_state.current_chat_id = c_id
+                            st.session_state.messages = chat_data.get("messages", [])
+                            st.rerun()
+            with col_c_del:
+                if st.button("×", key=f"c_del_{c_id}", help="Delete this chat"):
+                    chat_mgr.delete_chat(c_id)
+                    if c_id == st.session_state.get("current_chat_id"):
+                        st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
+                        st.session_state.messages = []
+                    st.rerun()
 
     # Sidebar Knowledge Base Metrics
     stats = rag.vectorstore.get_stats()
@@ -829,6 +911,10 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "assis
             st.session_state.messages.pop()
             last_user_query = st.session_state.messages.pop()["content"]
             st.session_state["pending_prompt"] = last_user_query
+            chat_mgr.save_chat(
+                chat_id=st.session_state.current_chat_id,
+                messages=st.session_state.messages
+            )
             st.rerun()
 
 # Check for query from input or suggestion card
@@ -949,6 +1035,10 @@ if len(st.session_state.messages) == 0 and not active_query:
 if active_query:
     # 1. User Message (Streamlit built-in sleek vector silhouette)
     st.session_state.messages.append({"role": "user", "content": active_query})
+    chat_mgr.save_chat(
+        chat_id=st.session_state.current_chat_id,
+        messages=st.session_state.messages
+    )
     with st.chat_message("user"):
         st.markdown(active_query)
 
@@ -1007,12 +1097,16 @@ if active_query:
             full_response = f"**Backend Error:** {err}"
             st.error(full_response)
 
-        # 3. Save Assistant Message
+        # 3. Save Assistant Message and persist to disk
         st.session_state.messages.append({
             "role": "assistant",
             "content": full_response,
             "citations": citations
         })
+        chat_mgr.save_chat(
+            chat_id=st.session_state.current_chat_id,
+            messages=st.session_state.messages
+        )
 
 # Bottom Disclaimer
 st.markdown(

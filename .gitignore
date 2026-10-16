@@ -30,6 +30,8 @@ data/images/*
 !data/images/.gitkeep
 data/web_docs/*
 !data/web_docs/.gitkeep
+data/chats/*
+!data/chats/.gitkeep
 
 # OS generated files
 .DS_Store
