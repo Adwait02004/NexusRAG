@@ -116,10 +116,38 @@ class RAGSearch:
         return ChatGroq(groq_api_key=api_key, model_name=chosen_model, temperature=temperature)
 
     def reindex_all(self) -> Dict[str, Any]:
-        """Reload all documents from data folder and rebuild the vector store."""
+        """Reload all documents from data folder and rebuild the vector store and PostgreSQL."""
         docs = load_all_documents(self.data_path)
         self.vectorstore.build_from_documents(docs)
         self.hybrid.reload()
+
+        # Mirror existing documents and chunks to PostgreSQL if connected
+        if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected and docs:
+            try:
+                chunks = self.vectorstore.emb_pipe.chunk_documents(docs)
+                if chunks:
+                    embeddings = self.vectorstore.emb_pipe.embed_chunks(chunks)
+                    by_source = {}
+                    for chunk, emb in zip(chunks, embeddings):
+                        src = chunk.metadata.get("source", "unknown")
+                        if src not in by_source:
+                            by_source[src] = {"chunks": [], "embeddings": []}
+                        by_source[src]["chunks"].append(chunk)
+                        by_source[src]["embeddings"].append(emb)
+
+                    for src, data in by_source.items():
+                        p = Path(src)
+                        raw_bytes = p.read_bytes() if p.exists() and p.is_file() else b""
+                        self.pg_db.store_document(
+                            filename=p.name or src,
+                            file_type=p.suffix.lstrip(".").lower() or "txt",
+                            raw_bytes=raw_bytes,
+                            chunks=data["chunks"],
+                            embeddings=data["embeddings"]
+                        )
+            except Exception as e_sync:
+                print(f"[WARN] Failed to sync to PostgreSQL during reindex_all: {e_sync}")
+
         return self.vectorstore.get_stats()
 
     def add_document_file(self, file_path: str | Path) -> Dict[str, Any]:
@@ -133,9 +161,9 @@ class RAGSearch:
             if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected:
                 p = Path(file_path)
                 try:
-                    raw_bytes = p.read_bytes()
-                    chunks = self.vectorstore.embedding_manager.split_documents(docs)
-                    embeddings = self.vectorstore.embedding_manager.embed_documents(chunks)
+                    raw_bytes = p.read_bytes() if p.is_file() else b""
+                    chunks = self.vectorstore.emb_pipe.chunk_documents(docs)
+                    embeddings = self.vectorstore.emb_pipe.embed_chunks(chunks)
                     self.pg_db.store_document(
                         filename=p.name,
                         file_type=p.suffix.lstrip(".").lower() or "txt",
