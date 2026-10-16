@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval", action="store_true", help="Run the automated quantitative benchmark suite")
     parser.add_argument("--query", type=str, default="Explain Neural Network Architectures", help="Query string for CLI mode")
     parser.add_argument("--mode", type=str, default="hybrid", choices=["hybrid", "dense", "sparse"], help="Retrieval method")
-    parser.add_argument("--port", type=int, default=8501, help="Port for the Streamlit web studio")
+    parser.add_argument("--port", type=int, default=8500, help="Port for the Streamlit web studio")
 
     args = parser.parse_args()
 
