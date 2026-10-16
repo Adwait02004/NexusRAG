@@ -952,30 +952,27 @@ if active_query:
                     enable_web_search=enable_web_search
                 )
 
-            if not citations:
-                full_response = "I could not find any relevant information in your uploaded documents or external resources for this query. Please try rephrasing or upload additional documents."
-                st.markdown(full_response)
-            else:
-                def token_stream():
-                    try:
-                        for token in safe_stream_query(
-                            rag,
-                            query=active_query,
-                            chat_history=history,
-                            top_k=top_k,
-                            model_name=selected_model_id,
-                            retrieval_mode=retrieval_mode,
-                            use_reranker=use_reranker,
-                            enable_web_search=enable_web_search
-                        ):
-                            if token:
-                                yield token
-                    except Exception as s_err:
-                        yield f"\n\n*Notice: {s_err}*"
+            def token_stream():
+                try:
+                    for token in safe_stream_query(
+                        rag,
+                        query=active_query,
+                        chat_history=history,
+                        top_k=top_k,
+                        model_name=selected_model_id,
+                        retrieval_mode=retrieval_mode,
+                        use_reranker=use_reranker,
+                        enable_web_search=enable_web_search
+                    ):
+                        if token:
+                            yield token
+                except Exception as s_err:
+                    yield f"\n\n*Notice: {s_err}*"
 
-                full_response = st.write_stream(token_stream())
+            full_response = st.write_stream(token_stream())
 
-                # Render Citation Drawer / Expander
+            # Render Citation Drawer / Expander only if relevant citations exist
+            if citations:
                 with st.expander(f"View {len(citations)} Verified Source Citations"):
                     for i, c in enumerate(citations, 1):
                         if c.get("is_web"):

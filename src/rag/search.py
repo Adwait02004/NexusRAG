@@ -212,6 +212,14 @@ class RAGSearch:
         for r in raw_results:
             score = round(float(r.get("score", 0.0)), 3)
             relevance_pct = max(0, min(100, int(score * 100)))
+            
+            # Discard completely unrelated chunks (0% relevance or negative cross-encoder logit)
+            raw_logit = r.get("raw_rerank_score")
+            if raw_logit is not None and (raw_logit < -3.0 or relevance_pct <= 5):
+                continue
+            elif raw_logit is None and relevance_pct <= 5:
+                continue
+
             snippet = r.get("text", "").strip()
             preview = (snippet[:200] + "...") if len(snippet) > 200 else snippet
 
@@ -258,16 +266,25 @@ class RAGSearch:
                 source_info = f"[Private Document {i}: {c['source']}, Page {c['page']}]"
             context_blocks.append(f"{source_info}\n{c['full_text']}")
 
-        context_str = "\n\n".join(context_blocks) if context_blocks else "No relevant documents found."
+        if context_blocks:
+            context_str = "\n\n".join(context_blocks)
+            doc_instructions = (
+                "1. Synthesize accurate, comprehensive, and well-structured answers using the provided Context.\n"
+                "2. Whenever you state facts or insights from the context, include in-text citations referencing the document or web source (e.g., '[fundamentals_of_ai.pdf, Page 3]' or '[Wikipedia: Deep Learning]').\n"
+                "3. If private documents and web resources both touch on the topic, highlight how they complement each other.\n"
+            )
+        else:
+            context_str = "No specific private documents or external sources matched this query."
+            doc_instructions = (
+                "1. Answer the user's question directly, clearly, and informatively using your broad technical and general knowledge.\n"
+                "2. Do not fabricate or invent citations from unmentioned documents.\n"
+            )
 
         system_prompt = (
-            "You are an expert AI Assistant equipped with an Omni-Source Retrieval-Augmented Generation (RAG) knowledge engine.\n"
-            "Your knowledge encompasses both the user's private uploaded documents AND live external resources (Wikipedia, ArXiv, Web).\n\n"
+            "You are an expert AI Assistant equipped with an Omni-Source Retrieval-Augmented Generation (RAG) knowledge engine.\n\n"
             "GUIDELINES:\n"
-            "1. Synthesize accurate, comprehensive, and well-structured answers using the provided Context.\n"
-            "2. Whenever you state facts or insights from the context, include in-text citations referencing the document or web source (e.g., '[fundamentals_of_ai.pdf, Page 3]' or '[Wikipedia: Deep Learning]').\n"
-            "3. If private documents and web resources both touch on the topic, highlight how they complement each other.\n"
-            "4. Format your answer using clear Markdown with headings, bullet points, and code blocks where applicable.\n\n"
+            f"{doc_instructions}"
+            "3. Format your answer using clear Markdown with headings, bullet points, and code blocks where applicable.\n\n"
             f"=== CONTEXT DOCUMENTS & EXTERNAL SOURCES ===\n{context_str}\n============================================="
         )
 
