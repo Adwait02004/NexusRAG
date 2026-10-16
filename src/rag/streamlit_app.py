@@ -297,24 +297,40 @@ div[data-testid="stSidebar"] div[data-testid="column"]:last-child button:hover {
 }
 
 /* ChatGPT Message Flow */
+/* ChatGPT / Gemini Message Flow (Completely Borderless & Seamless Canvas) */
 div[data-testid="stChatMessage"] {
-    border-radius: 14px !important;
-    padding: 16px 20px !important;
-    margin-bottom: 14px !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 12px 0px !important;
+    margin-bottom: 20px !important;
 }
 
-/* User Message */
+/* User Message: Elegant pill bubble like ChatGPT */
 div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) {
-    background: rgba(99, 102, 241, 0.14) !important;
-    border-color: rgba(99, 102, 241, 0.3) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 20px !important;
+    padding: 12px 18px !important;
+    max-width: 85% !important;
+    margin-left: auto !important;
 }
 
-/* Assistant Message */
-div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) {
-    background: rgba(17, 24, 39, 0.75) !important;
-    backdrop-filter: blur(10px);
+/* Assistant Message: Zero borders, zero cards, completely natural flow like Gemini/ChatGPT */
+div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]),
+div[data-testid="stChatMessage"]:not(:has(div[data-testid="stChatMessageAvatarUser"])) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4px 0px !important;
+    border-radius: 0 !important;
+}
+
+div[data-testid="stChatMessageContent"] {
+    color: #e2e8f0 !important;
+    font-size: 0.98rem !important;
+    line-height: 1.75 !important;
 }
 
 /* Tables Styling */
