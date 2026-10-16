@@ -29,14 +29,23 @@ class PostgresVectorDB:
         database: Optional[str] = None,
         user: Optional[str] = None,
         password: Optional[str] = None,
-        sslmode: str = "prefer"
+        sslmode: Optional[str] = None,
+        database_url: Optional[str] = None
     ):
+        self.database_url = database_url or os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
         self.host = host or os.getenv("POSTGRES_HOST", "localhost")
         self.port = int(port or os.getenv("POSTGRES_PORT", 5432))
-        self.database = database or os.getenv("POSTGRES_DB", "nexusrag_db")
-        self.user = user or os.getenv("POSTGRES_USER", "nexus_user")
-        self.password = password or os.getenv("POSTGRES_PASSWORD", "nexus_secure_password_2026")
-        self.sslmode = sslmode
+        self.database = database or os.getenv("POSTGRES_DB", "postgres")
+        self.user = user or os.getenv("POSTGRES_USER", "postgres")
+        self.password = password or os.getenv("POSTGRES_PASSWORD", "")
+        
+        # Auto-detect SSL: Cloud providers like Supabase require sslmode=require
+        if sslmode:
+            self.sslmode = sslmode
+        elif "supabase.co" in (self.host or "") or (self.database_url and "supabase.co" in self.database_url):
+            self.sslmode = "require"
+        else:
+            self.sslmode = os.getenv("POSTGRES_SSLMODE", "prefer")
         
         self.engine = None
         self._connected = False
@@ -49,13 +58,25 @@ class PostgresVectorDB:
             from pgvector.sqlalchemy import Vector
             
             # Connection URL
-            url = f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}?sslmode={self.sslmode}"
+            if self.database_url:
+                url = self.database_url
+                if url.startswith("postgres://"):
+                    url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+                elif url.startswith("postgresql://"):
+                    url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+                if "?" not in url and self.sslmode:
+                    url += f"?sslmode={self.sslmode}"
+            else:
+                from urllib.parse import quote_plus
+                safe_pass = quote_plus(str(self.password))
+                url = f"postgresql+psycopg2://{self.user}:{safe_pass}@{self.host}:{self.port}/{self.database}?sslmode={self.sslmode}"
+            
             self.engine = create_engine(
                 url,
                 pool_size=5,
                 max_overflow=10,
-                pool_timeout=3,
-                connect_args={"connect_timeout": 3}
+                pool_timeout=5,
+                connect_args={"connect_timeout": 5}
             )
             # Test ping
             with self.engine.connect() as conn:
