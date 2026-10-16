@@ -317,17 +317,23 @@ div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"])
     margin-left: auto !important;
 }
 
-/* Assistant Message: Zero borders, zero cards, completely natural flow like Gemini/ChatGPT */
-div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]),
-div[data-testid="stChatMessage"]:not(:has(div[data-testid="stChatMessageAvatarUser"])) {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 4px 0px !important;
-    border-radius: 0 !important;
+/* Completely Hide User & Assistant Chat Avatars/Icons */
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"],
+div[data-testid="stChatMessage"] > div:first-child:not([data-testid="stChatMessageContent"]),
+div[data-testid="stChatMessage"] div[data-testid*="Avatar"],
+.stChatMessageAvatar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: hidden !important;
 }
 
 div[data-testid="stChatMessageContent"] {
+    width: 100% !important;
+    max-width: 100% !important;
     color: #e2e8f0 !important;
     font-size: 0.98rem !important;
     line-height: 1.75 !important;
