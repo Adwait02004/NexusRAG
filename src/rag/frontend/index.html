@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusRAG Gemini Input</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: transparent;
+            color: #f1f5f9;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 4px 2px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* --- THE CHAT INPUT CAPSULE --- */
+        .input-bar {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 24px;
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-bar.focused {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3), 0 10px 35px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Gemini Plus Button */
+        .plus-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            border-radius: 50%;
+            color: #94a3b8;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+
+        .plus-btn:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
+            border-color: rgba(99, 102, 241, 0.6);
+            color: #ffffff;
+            transform: scale(1.08);
+            box-shadow: 0 0 14px rgba(99, 102, 241, 0.4);
+        }
+
+        .plus-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Multiline Textarea */
+        .text-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #f1f5f9;
+            font-family: inherit;
+            font-size: 0.94rem;
+            line-height: 1.45;
+            resize: none;
+            max-height: 120px;
+            min-height: 24px;
+            padding: 6px 2px;
+        }
+
+        .text-input::placeholder {
+            color: #64748b;
+        }
+
+        /* Send Button */
+        .send-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 50%;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .send-btn.active {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+        }
+
+        .send-btn.active:hover {
+            transform: scale(1.06);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-bar" id="inputBar">
+            <!-- Gemini Plus Button -->
+            <button class="plus-btn" id="plusBtn" title="Ask Gemini — Upload Files, Images & Web Links">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+
+            <!-- Text Input -->
+            <textarea class="text-input" id="messageInput" rows="1" placeholder="Message NexusRAG..."></textarea>
+
+            <!-- Send Button -->
+            <button class="send-btn" id="sendBtn" title="Send message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const plusBtn = document.getElementById('plusBtn');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const inputBar = document.getElementById('inputBar');
+
+        function sendToStreamlit(type, data) {
+            window.parent.postMessage(Object.assign({
+                isStreamlitMessage: true,
+                type: type
+            }, data), "*");
+        }
+
+        function notifyFrameHeight() {
+            sendToStreamlit("streamlit:setFrameHeight", { height: 68 });
+        }
+
+        // Clicking the + button triggers the Gemini dialog in Streamlit
+        plusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            sendToStreamlit("streamlit:setComponentValue", {
+                value: {
+                    action: "open_gemini_menu",
+                    timestamp: Date.now()
+                }
+            });
+        });
+
+        // Focus styling
+        messageInput.addEventListener('focus', () => inputBar.classList.add('focused'));
+        messageInput.addEventListener('blur', () => inputBar.classList.remove('focused'));
+
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+            const hasText = messageInput.value.trim().length > 0;
+            if (hasText) {
+                sendBtn.classList.add('active');
+            } else {
+                sendBtn.classList.remove('active');
+            }
+        });
+
+        // Send submission
+        function submitMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            sendToStreamlit("streamlit:setComponentValue", {
+                value: {
+                    action: "send_message",
+                    text: text,
+                    timestamp: Date.now()
+                }
+            });
+
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            sendBtn.classList.remove('active');
+        }
+
+        sendBtn.addEventListener('click', submitMessage);
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitMessage();
+            }
+        });
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            sendToStreamlit("streamlit:componentReady", { apiVersion: 1 });
+            notifyFrameHeight();
+        });
+
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'streamlit:render') {
+                notifyFrameHeight();
+            }
+        });
+    </script>
+</body>
+</html>

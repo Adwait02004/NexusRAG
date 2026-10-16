@@ -1,0 +1,36 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Secrets & Environment variables (DO NOT COMMIT)
+.env
+*.env
+!.env.example
+
+# Temporary scratch & build artifacts
+scratch/
+.system_generated/
+*.log
+data/vector_store/
+faiss_store/
+data/text_files/*
+!data/text_files/.gitkeep
+data/pdf/*
+!data/pdf/.gitkeep
+data/images/*
+!data/images/.gitkeep
+data/web_docs/*
+!data/web_docs/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db

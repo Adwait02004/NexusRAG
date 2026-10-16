@@ -1,0 +1,12 @@
+services:
+  nexusrag:
+    build: .
+    container_name: nexusrag-studio
+    ports:
+      - "8501:8501"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./faiss_store:/app/faiss_store
+    restart: unless-stopped

@@ -1,0 +1,139 @@
+# NexusRAG Studio
+### Enterprise Omni-Source RAG (Private Documents + Live Web + Two-Stage Re-Ranking)
+
+NexusRAG Studio is an enterprise-grade Retrieval-Augmented Generation (RAG) platform designed for **Data Science & AI/ML engineering**. It synthesizes knowledge across both **private documents** and **live external resources** (Wikipedia, ArXiv, Google, Reddit, and arbitrary web URLs) using **hybrid BM25 + FAISS retrieval**, deep **Cross-Encoder re-ranking**, and **Groq's ultra-fast LLM inference**.
+
+---
+
+## Key Features
+
+- **Omni-Source Knowledge Architecture**: Seamlessly fuses private local documents (`.pdf`, `.txt`, `.csv`, `.docx`, `.xlsx`, `.json`) with live external research (Wikipedia, ArXiv, and global search providers).
+- **Universal URL Ingestion**: Paste any web article, Reddit discussion, or documentation URL in the sidebar to automatically scrape, clean, chunk, and index it into the local FAISS + BM25 vectorstore.
+- **Two-Stage Information Retrieval Pipeline**: High-recall candidate generation (Hybrid RRF) paired with high-precision cross-attention re-ranking via MS-MARCO Cross-Encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`).
+- **Hybrid Retrieval (BM25 + FAISS)**: Merges exact keyword matching with 384-dimensional dense semantic embeddings (`all-MiniLM-L6-v2`) via Reciprocal Rank Fusion (RRF).
+- **Quantitative Evaluation Suite (`evaluate.py`)**: Automated benchmark comparing Dense, Sparse, Hybrid, and Two-Stage Re-Ranking on Hit Rate @ 3 and latency.
+- **Granular Multi-Source Citations**: Every generated response includes expandable context inspector cards showing exact document names, page numbers, clickable web URLs, and relevance scores.
+- **Ultra-Fast LLM Inference**: Integrated with Groq's API supporting state-of-the-art open models (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`).
+- **ChatGPT-Style Pure Python UI**: Centered conversation layout, vector SVG icons, prompt suggestion cards, model switching, dynamic settings, and chat transcript export.
+- **Production Containerization**: Multi-stage `Dockerfile` and `docker-compose.yml`.
+
+---
+
+## Quantitative Benchmark Results
+
+Evaluated across ground-truth technical queries using [`evaluate.py`](file:///d:/RAG/evaluate.py):
+
+| Retrieval Technique | Hit Rate @ 3 | Average Latency | Key Advantage |
+| :--- | :---: | :---: | :--- |
+| **BM25Okapi (Sparse Lexical)** | 100.0% | **0.5 ms** | Exact keyword & symbol precision |
+| **FAISS MiniLM (Dense Semantic)** | 100.0% | 13.6 ms | Deep conceptual & semantic similarity |
+| **Hybrid Search (Dense + BM25 via RRF)** | 100.0% | 13.0 ms | Robust to both synonyms & exact terms |
+| **Two-Stage (Hybrid + Cross-Encoder)** | **100.0%** | **~175 ms** | **Full cross-attention scoring for maximum precision** |
+
+---
+
+## Architecture Flow
+
+```mermaid
+flowchart TD
+    subgraph Ingestion["1. Multi-Format & Web Ingestion"]
+        LocalDocs["Local Files (PDF, TXT, CSV, DOCX)"] --> Loader["data_loader.py\nMulti-Format Parser"]
+        WebLinks["Web URLs (Articles, Reddit, Docs)"] --> URLIngester["url_ingester.py\nWeb Scraper & Cleaner"]
+        URLIngester --> Loader
+        Loader --> Split["embedding.py\nRecursive Splitter"]
+        Split --> VectorDB[("Meta FAISS Vector Store\n(Normalized IndexFlatIP)")]
+        Split --> LexicalDB[("BM25 Corpus Index\n(Tokenized Vocabulary)")]
+    end
+
+    subgraph Stage1["2. Stage 1: High Recall Retrieval"]
+        Q["User Query"] --> FAISS_Search["Dense Search\n(all-MiniLM-L6-v2)"]
+        Q --> BM25_Search["Sparse Search\n(BM25Okapi)"]
+        FAISS_Search --> RRF["hybrid_retriever.py\nReciprocal Rank Fusion (RRF)"]
+        BM25_Search --> RRF
+        RRF --> Candidates["Candidate Pool (Top 12-15 Chunks)"]
+    end
+
+    subgraph Stage2["3. Stage 2: Cross-Encoder Re-Ranking"]
+        Candidates --> Reranker["reranker.py\nCross-Encoder (MS-MARCO MiniLM)"]
+        Q --> Reranker
+        Reranker --> TopChunks["Top-K Re-Ranked Passages"]
+    end
+
+    subgraph External["4. Live External Knowledge"]
+        Q --> OmniSearch["multi_search.py\nOmniSearchEngine"]
+        OmniSearch --> Wiki["Wikipedia API"]
+        OmniSearch --> ArXiv["ArXiv Research API"]
+        OmniSearch --> Google["Google / Serper API"]
+        Wiki --> LiveContext["Live External Citations"]
+        ArXiv --> LiveContext
+        Google --> LiveContext
+    end
+
+    subgraph Generation["5. Inference & Multi-Source Synthesis"]
+        TopChunks --> SearchEngine["search.py\nContext & Citation Builder"]
+        LiveContext --> SearchEngine
+        SearchEngine --> Groq["ChatGroq LLM Streaming"]
+        Groq --> StreamlitUI["streamlit_app.py\nChatGPT-Style Interface"]
+    end
+```
+
+---
+
+## Project Structure
+
+```text
+RAG/
+├── app.py                      # Unified launcher (auto-switches to .venv)
+├── evaluate.py                 # Automated 4-way retrieval benchmark
+├── Dockerfile                  # Production container image
+├── docker-compose.yml          # One-command orchestration
+├── requirements.txt            # Python dependencies
+├── .env                        # Environment variables (GROQ_API_KEY, SERPER_API_KEY)
+├── data/                       # Ingested documents
+│   ├── pdf/                    # PDF documents
+│   ├── text_files/             # Text & markdown documents
+│   └── web_docs/               # Ingested web pages & articles
+├── faiss_store/                # Persisted vector database & metadata
+└── src/
+    └── rag/
+        ├── __init__.py
+        ├── data_loader.py      # Multi-format parser with page tracking
+        ├── url_ingester.py     # Universal web & article scraper & ingester
+        ├── embedding.py        # Chunking & SentenceTransformer embeddings
+        ├── vectorstore.py      # FAISS vector store with normalized cosine distance
+        ├── hybrid_retriever.py # BM25 + FAISS Reciprocal Rank Fusion (RRF)
+        ├── reranker.py         # Cross-Encoder Re-Ranking (MS-MARCO MiniLM)
+        ├── multi_search.py     # Live multi-source search (Wikipedia, ArXiv, Google)
+        ├── search.py           # Multi-mode RAG search engine & streaming
+        └── streamlit_app.py    # ChatGPT-style web UI with vector SVG icons
+```
+
+---
+
+## Quick Start
+
+### 1. Configure Environment
+Add your [Groq API Key](https://console.groq.com) to `.env`:
+```env
+GROQ_API_KEY=gsk_your_groq_api_key_here
+
+# Optional: Add Serper / Google API key for live Google Web Search
+SERPER_API_KEY=your_serper_key_here
+```
+
+### 2. Launch NexusRAG Studio (Web UI)
+Run in your terminal:
+```bash
+python app.py
+```
+Open your browser at:
+**`http://localhost:8501`**
+
+### 3. Run Quantitative Benchmark
+Evaluate retrieval performance across Dense, Sparse, Hybrid, and Two-Stage Re-Ranking:
+```bash
+python app.py --eval
+```
+
+### 4. Ingesting from Web URLs
+In the sidebar, expand **"Ingest Web URL / Article"**, enter any website, documentation, or Wikipedia URL, and click **"Fetch & Index URL"**. The system downloads, parses, and indexes it into your knowledge base.
