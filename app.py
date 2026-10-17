@@ -88,7 +88,7 @@ if __name__ == "__main__":
             str(streamlit_script),
             f"--server.port={args.port}",
             "--server.headless=false",
-            "--server.fileWatcherType=none",
+            "--server.fileWatcherType=auto",
             "--browser.gatherUsageStats=false"
         ]
         subprocess.run(streamlit_cmd)
