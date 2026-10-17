@@ -621,7 +621,7 @@ def open_gemini_attachment_dialog():
         </div>
     """, unsafe_allow_html=True)
 
-    tab_files, tab_img, tab_url = st.tabs(["📎 Upload files", "🖼️ Images", "🌐 Web link"])
+    tab_files, tab_img, tab_url = st.tabs(["Upload Files", "Images", "Web Link"])
 
     with tab_files:
         st.caption("PDF, Word (.docx), Excel (.xlsx), CSV, JSON, PPTX, TXT")
@@ -805,9 +805,9 @@ with st.sidebar:
             with col_c_btn:
                 btn_type = "primary" if is_active else "secondary"
                 # Display title with chat bubble icon
-                display_label = c_title if len(c_title) <= 20 else c_title[:18] + "..."
+                display_label = c_title if len(c_title) <= 25 else c_title[:23] + "..."
                 if st.button(
-                    f"💬 {display_label}",
+                    display_label,
                     key=f"c_nav_{c_id}",
                     use_container_width=True,
                     type=btn_type,
@@ -1059,16 +1059,16 @@ for idx, msg in enumerate(st.session_state.messages):
         if msg.get("grounding"):
             g = msg["grounding"]
             badge_class = "verified" if g.get("status") == "VERIFIED" else ("mixed" if g.get("status") == "PARTIALLY_GROUNDED" else "general")
-            icon = "🛡️" if g.get("status") == "VERIFIED" else ("⚠️" if g.get("status") == "PARTIALLY_GROUNDED" else "✨")
+            icon_svg = ICON_VERIFIED if g.get("status") == "VERIFIED" else (ICON_WARNING if g.get("status") == "PARTIALLY_GROUNDED" else ICON_INFO)
             st.markdown(f"""
                 <div class="grounding-badge {badge_class}">
-                    {icon} <strong>Groundedness: {g.get('groundedness_pct', 95)}%</strong> • {g.get('verdict', 'Factually verified against source context')}
+                    {icon_svg}<strong>Groundedness: {g.get('groundedness_pct', 95)}%</strong> • {g.get('verdict', 'Factually verified against source context')}
                 </div>
             """, unsafe_allow_html=True)
 
         if msg.get("tracer"):
             t = msg["tracer"]
-            with st.expander(f"⚡ LLMOps Trace: {t.get('total_latency_ms', 0):.1f} ms | TTFT: {t.get('ttft_ms', 0):.1f} ms | {t.get('total_tokens', 0)} Tokens (~${t.get('estimated_cost_usd', 0.0):.5f})"):
+            with st.expander(f"LLMOps Trace: {t.get('total_latency_ms', 0):.1f} ms | TTFT: {t.get('ttft_ms', 0):.1f} ms | {t.get('total_tokens', 0)} Tokens (~${t.get('estimated_cost_usd', 0.0):.5f})"):
                 for sp in t.get("spans", []):
                     st.markdown(f"- **{sp['name']}**: `{sp['duration_ms']} ms` ({sp['pct_of_total']}%)")
 
@@ -1308,17 +1308,17 @@ if active_query:
 
                 if grounding_result:
                     badge_class = "verified" if grounding_result.get("status") == "VERIFIED" else ("mixed" if grounding_result.get("status") == "PARTIALLY_GROUNDED" else "general")
-                    icon = "🛡️" if grounding_result.get("status") == "VERIFIED" else ("⚠️" if grounding_result.get("status") == "PARTIALLY_GROUNDED" else "✨")
+                    icon_svg = ICON_VERIFIED if grounding_result.get("status") == "VERIFIED" else (ICON_WARNING if grounding_result.get("status") == "PARTIALLY_GROUNDED" else ICON_INFO)
                     st.markdown(f"""
                         <div class="grounding-badge {badge_class}">
-                            {icon} <strong>Groundedness: {grounding_result.get('groundedness_pct', 95)}%</strong> • {grounding_result.get('verdict', 'Factually verified against source context')}
+                            {icon_svg}<strong>Groundedness: {grounding_result.get('groundedness_pct', 95)}%</strong> • {grounding_result.get('verdict', 'Factually verified against source context')}
                         </div>
                     """, unsafe_allow_html=True)
 
             # LLMOps Tracing Summary
             if tracer:
                 tracer_summary = tracer.get_summary()
-                with st.expander(f"⚡ LLMOps Trace: {tracer_summary.get('total_latency_ms', 0):.1f} ms | TTFT: {tracer_summary.get('ttft_ms', 0):.1f} ms | {tracer_summary.get('total_tokens', 0)} Tokens (~${tracer_summary.get('estimated_cost_usd', 0.0):.5f})"):
+                with st.expander(f"LLMOps Trace: {tracer_summary.get('total_latency_ms', 0):.1f} ms | TTFT: {tracer_summary.get('ttft_ms', 0):.1f} ms | {tracer_summary.get('total_tokens', 0)} Tokens (~${tracer_summary.get('estimated_cost_usd', 0.0):.5f})"):
                     for sp in tracer_summary.get("spans", []):
                         st.markdown(f"- **{sp['name']}**: `{sp['duration_ms']} ms` ({sp['pct_of_total']}%)")
 
