@@ -353,13 +353,20 @@ class RAGSearch:
                 "2. Do not fabricate or invent citations from unmentioned documents.\n"
             )
 
-        format_instructions = (
-            "3. RESPONSE FORMATTING (CRITICAL):\n"
-            "   - Write in natural, articulate, narrative prose paragraphs (like ChatGPT and Gemini).\n"
-            "   - For any person, historical figure, company, algorithm, or topic, deliver an engaging, thorough narrative covering their identity, background, key achievements, contributions, and historical/technical significance.\n"
-            "   - DO NOT output responses in markdown tables (e.g. '| Property | Details |'). Tabular layouts are prohibited unless the user explicitly requests a table.\n"
-            "   - Use clean Markdown subheadings (###) and bullet points for key milestones or lists, but always maintain rich, flowing prose paragraphs for explanations.\n"
-        )
+        user_wants_table = bool(re.search(r"\b(table|tabular|grid|matrix)\b", query, re.IGNORECASE))
+        if user_wants_table:
+            format_instructions = (
+                "3. RESPONSE FORMATTING:\n"
+                "   - The user explicitly requested a table. Provide accurate, clean Markdown tables with headers.\n"
+            )
+        else:
+            format_instructions = (
+                "3. STRICT FORMATTING MANDATE (ABSOLUTELY NO TABLES):\n"
+                "   - The user did NOT request a table. You MUST NOT output markdown tables (| ... | ... |).\n"
+                "   - DO NOT format definitions, categories, paradigms, challenges, or comparisons as tables under ANY circumstances.\n"
+                "   - Write all explanations, concepts, and answers in natural, fluent, narrative prose paragraphs and bullet points.\n"
+                "   - Use clean subheadings (###) and bulleted lists for key takeaways, but maintain rich narrative prose.\n"
+            )
 
         system_prompt = (
             "You are an expert AI Assistant equipped with an Omni-Source Retrieval-Augmented Generation (RAG) knowledge engine.\n\n"

@@ -3,6 +3,7 @@ import shutil
 import time
 import html
 import base64
+import re
 from pathlib import Path
 import streamlit as st
 
@@ -1004,11 +1005,57 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Helper function to clean raw HTML tags that leak into markdown tables
-def clean_markdown_content(text: str) -> str:
+def convert_tables_to_prose(text: str) -> str:
+    """Convert raw markdown tables into clean, natural bullet points and prose."""
+    if not isinstance(text, str) or "|" not in text:
+        return text
+
+    lines = text.splitlines()
+    result = []
+    in_table = False
+    table_headers = []
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line.startswith("|") and line.endswith("|"):
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if not in_table:
+                if i + 1 < len(lines) and re.match(r"^\s*\|?\s*:?-+:?\s*(\|?\s*:?-+:?\s*)+\|?\s*$", lines[i + 1]):
+                    table_headers = cells
+                    in_table = True
+                    i += 2
+                    continue
+            if in_table:
+                if len(cells) >= 2:
+                    primary = cells[0].strip("*").strip()
+                    desc = cells[1].strip()
+                    extra_parts = []
+                    for idx, c in enumerate(cells[2:], 2):
+                        if c:
+                            h_label = table_headers[idx] if idx < len(table_headers) else f"Detail {idx}"
+                            extra_parts.append(f"{h_label}: {c}")
+                    extra_str = f" ({'; '.join(extra_parts)})" if extra_parts else ""
+                    result.append(f"- **{primary}**: {desc}{extra_str}")
+                i += 1
+                continue
+        else:
+            if in_table:
+                in_table = False
+                table_headers = []
+            result.append(lines[i])
+            i += 1
+
+    return "\n".join(result)
+
+# Helper function to clean markdown and convert unrequested tables to prose
+def clean_markdown_content(text: str, query: str = "") -> str:
     if not isinstance(text, str):
         return str(text)
-    return text.replace("<br>•", "\n• ").replace("<br>", " ")
+    user_wants_table = bool(re.search(r"\b(table|tabular|grid|matrix)\b", query, re.IGNORECASE))
+    cleaned = text.replace("<br>•", "\n• ").replace("<br>", " ")
+    if not user_wants_table:
+        cleaned = convert_tables_to_prose(cleaned)
+    return cleaned
 
 # Helper function to render visual entity cards (portraits, diagrams, figures)
 def render_entity_images(images):
@@ -1049,7 +1096,10 @@ def render_entity_images(images):
 # Display Conversation History
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
-        st.markdown(clean_markdown_content(msg["content"]))
+        user_q = ""
+        if msg["role"] == "assistant" and idx > 0 and st.session_state.messages[idx - 1]["role"] == "user":
+            user_q = st.session_state.messages[idx - 1].get("content", "")
+        st.markdown(clean_markdown_content(msg["content"], query=user_q))
         if "images" in msg and msg["images"]:
             render_entity_images(msg["images"])
         if "citations" in msg and msg["citations"]:
@@ -1330,6 +1380,10 @@ if active_query:
         except Exception as err:
             full_response = f"**Backend Error:** {err}"
             st.error(full_response)
+
+        user_wants_table = bool(re.search(r"\b(table|tabular|grid|matrix)\b", active_query, re.IGNORECASE))
+        if not user_wants_table:
+            full_response = convert_tables_to_prose(full_response)
 
         # 3. Save Assistant Message and persist to disk
         st.session_state.messages.append({
