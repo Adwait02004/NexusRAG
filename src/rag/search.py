@@ -353,11 +353,19 @@ class RAGSearch:
                 "2. Do not fabricate or invent citations from unmentioned documents.\n"
             )
 
+        format_instructions = (
+            "3. RESPONSE FORMATTING (CRITICAL):\n"
+            "   - Write in natural, articulate, narrative prose paragraphs (like ChatGPT and Gemini).\n"
+            "   - For any person, historical figure, company, algorithm, or topic, deliver an engaging, thorough narrative covering their identity, background, key achievements, contributions, and historical/technical significance.\n"
+            "   - DO NOT output responses in markdown tables (e.g. '| Property | Details |'). Tabular layouts are prohibited unless the user explicitly requests a table.\n"
+            "   - Use clean Markdown subheadings (###) and bullet points for key milestones or lists, but always maintain rich, flowing prose paragraphs for explanations.\n"
+        )
+
         system_prompt = (
             "You are an expert AI Assistant equipped with an Omni-Source Retrieval-Augmented Generation (RAG) knowledge engine.\n\n"
             "GUIDELINES:\n"
             f"{doc_instructions}"
-            "3. Format your answer using clear Markdown with headings, bullet points, and code blocks where applicable.\n\n"
+            f"{format_instructions}\n"
             f"=== CONTEXT DOCUMENTS & EXTERNAL SOURCES ===\n{context_str}\n============================================="
         )
 

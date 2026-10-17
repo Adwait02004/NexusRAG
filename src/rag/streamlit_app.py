@@ -67,9 +67,10 @@ div[data-testid="stDecoration"] {display: none !important;}
         radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.06) 0%, transparent 45%);
 }
 
-/* ChatGPT Centered Max-Width Container */
+/* Broad Executive Container for Comfortable Reading & Wide Chat Bar */
 .block-container {
-    max-width: 820px !important;
+    max-width: 1100px !important;
+    width: 92% !important;
     padding-top: 1rem !important;
     padding-bottom: 6.5rem !important;
     margin: 0 auto !important;
