@@ -1,6 +1,7 @@
 [server]
 port = 8500
 fileWatcherType = "none"
+folderWatchBlacklist = ["**/site-packages/**", "**/.venv/**"]
 headless = false
 enableCORS = false
 enableXsrfProtection = false

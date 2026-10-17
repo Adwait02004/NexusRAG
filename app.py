@@ -91,7 +91,7 @@ if __name__ == "__main__":
                 str(streamlit_script),
                 f"--server.port={args.port}",
                 "--server.headless=false",
-                "--server.fileWatcherType=auto",
+                "--server.fileWatcherType=none",
                 "--browser.gatherUsageStats=false"
             ]
             try:
