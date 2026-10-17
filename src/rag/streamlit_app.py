@@ -1,6 +1,8 @@
 import sys
 import shutil
 import time
+import html
+import base64
 from pathlib import Path
 import streamlit as st
 
@@ -532,6 +534,64 @@ div[data-testid="stDialog"] .stTabs [aria-selected="true"] {
     color: #ffffff !important;
 }
 
+/* Sleek Entity Visual Media Cards (Google Knowledge Graph / Perplexity / ChatGPT style) */
+.entity-media-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 14px 0 16px 0;
+}
+
+.entity-media-card {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none !important;
+    width: 175px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.entity-media-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.entity-media-img {
+    width: 100%;
+    height: 125px;
+    object-fit: cover;
+    background-color: #0f172a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.entity-media-info {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.entity-media-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.entity-media-source {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .chatgpt-footer-disclaimer {
     text-align: center;
     font-size: 0.72rem;
@@ -945,10 +1005,48 @@ def clean_markdown_content(text: str) -> str:
         return str(text)
     return text.replace("<br>•", "\n• ").replace("<br>", " ")
 
+# Helper function to render visual entity cards (portraits, diagrams, figures)
+def render_entity_images(images):
+    if not images:
+        return
+    cards_html = []
+    for img in images:
+        title = html.escape(str(img.get("title", "Visual Asset")))
+        img_url = str(img.get("image_url", ""))
+        src_url = img.get("source_url", "#")
+        source_label = html.escape(str(img.get("caption", "Encyclopedia Visual")))
+        if not img_url:
+            continue
+        if not (img_url.startswith("http://") or img_url.startswith("https://") or img_url.startswith("data:")):
+            try:
+                local_p = Path(img_url)
+                if local_p.exists() and local_p.is_file():
+                    mime = "image/png" if local_p.suffix.lower() == ".png" else "image/jpeg"
+                    b64 = base64.b64encode(local_p.read_bytes()).decode("utf-8")
+                    img_url = f"data:{mime};base64,{b64}"
+                else:
+                    continue
+            except Exception:
+                continue
+
+        card = f'''<a href="{src_url}" target="_blank" rel="noopener noreferrer" class="entity-media-card" title="{title}">
+            <img src="{img_url}" alt="{title}" class="entity-media-img" loading="lazy" />
+            <div class="entity-media-info">
+                <span class="entity-media-title">{title}</span>
+                <span class="entity-media-source">{source_label}</span>
+            </div>
+        </a>'''
+        cards_html.append(card)
+
+    if cards_html:
+        st.markdown(f'<div class="entity-media-container">{"".join(cards_html)}</div>', unsafe_allow_html=True)
+
 # Display Conversation History
 for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         st.markdown(clean_markdown_content(msg["content"]))
+        if "images" in msg and msg["images"]:
+            render_entity_images(msg["images"])
         if "citations" in msg and msg["citations"]:
             with st.expander(f"View {len(msg['citations'])} Verified Source Citations"):
                 for i, c in enumerate(msg["citations"], 1):
@@ -1140,6 +1238,25 @@ if active_query:
                     tracer=tracer
                 )
 
+            # Fetch visual entity assets (portraits, diagrams, figures)
+            entity_images = []
+            if hasattr(rag, "fetch_entity_images"):
+                try:
+                    entity_images = rag.fetch_entity_images(active_query, limit=3)
+                except Exception as e_img:
+                    print(f"[WARN] Error fetching entity images: {e_img}")
+
+            if citations:
+                for c in citations:
+                    if c.get("image_url") and not any(img.get("image_url") == c["image_url"] for img in entity_images):
+                        clean_src = c.get("source", "Reference").replace("Wikipedia: ", "")
+                        entity_images.append({
+                            "title": clean_src,
+                            "image_url": c["image_url"],
+                            "source_url": c.get("page", "#"),
+                            "caption": "Wikipedia Reference"
+                        })
+
             def token_stream():
                 try:
                     for token in safe_stream_query(
@@ -1161,6 +1278,10 @@ if active_query:
                     yield f"\n\n*Notice: {s_err}*"
 
             full_response = st.write_stream(token_stream())
+
+            # Render Visual Entity Cards right below the response
+            if entity_images:
+                render_entity_images(entity_images)
 
             # Render Citation Drawer / Expander only if relevant citations exist
             if citations:
@@ -1210,6 +1331,7 @@ if active_query:
             "role": "assistant",
             "content": full_response,
             "citations": citations,
+            "images": entity_images,
             "grounding": grounding_result,
             "tracer": tracer_summary
         })

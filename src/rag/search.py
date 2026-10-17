@@ -114,6 +114,14 @@ class RAGSearch:
             self._omni_search = OmniSearchEngine()
         return self._omni_search
 
+    def fetch_entity_images(self, query: str, limit: int = 3) -> List[Dict[str, str]]:
+        """Fetch visual media, entity portraits, and concept diagrams."""
+        try:
+            return self.omni_search.fetch_relevant_images(query, limit=limit, data_dir=self.data_path)
+        except Exception as e:
+            print(f"[WARN] Failed to fetch entity images: {e}")
+            return []
+
     def get_llm(self, model_name: Optional[str] = None, temperature: float = 0.2):
         api_key = self.groq_api_key or os.getenv("GROQ_API_KEY")
         if not api_key:
@@ -396,9 +404,11 @@ class RAGSearch:
         llm = self.get_llm(model_name=model_name)
         response = llm.invoke(messages)
         
+        entity_images = self.fetch_entity_images(query, limit=3)
         return {
             "answer": sanitize_text(response.content),
             "citations": citations,
+            "images": entity_images,
             "model": model_name or self.default_model,
             "retrieval_mode": retrieval_mode,
             "reranked": use_reranker,
