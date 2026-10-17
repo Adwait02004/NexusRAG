@@ -14,6 +14,10 @@ NexusRAG Studio is an enterprise-grade Retrieval-Augmented Generation (RAG) plat
 - **Quantitative Evaluation Suite (`evaluate.py`)**: Automated benchmark comparing Dense, Sparse, Hybrid, and Two-Stage Re-Ranking on Hit Rate @ 3 and latency.
 - **Granular Multi-Source Citations**: Every generated response includes expandable context inspector cards showing exact document names, page numbers, clickable web URLs, and relevance scores.
 - **Ultra-Fast LLM Inference**: Integrated with Groq's API supporting state-of-the-art open models (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`).
+- **Agentic Query Planner & Decomposer**: Automatically recognizes compound or comparative queries, decomposing them into targeted parallel searches for comprehensive multi-hop retrieval.
+- **Self-RAG Hallucination Guardrails**: Cross-examines generated claims against retrieved context passages to compute a factual Groundedness Score (`0% - 100%`) and flag unverified statements.
+- **Real-Time LLMOps Observability**: Tracks the full retrieval waterfall, Time To First Token (TTFT), prompt/completion tokens, and real-time inference cost.
+- **Persistent Chat Session Manager**: Threaded conversation management stored locally on disk with sidebar navigation, search history, and delete actions.
 - **Enterprise-Grade Private Storage**: High-security PostgreSQL 16 database with `pgvector` (HNSW cosine index), cryptographic SHA-256 document deduplication, relational chunk metadata, and zero-trust audit logging.
 - **Resilient Multi-Store Architecture**: Seamless dual-engine design—persists automatically to PostgreSQL + `pgvector` when active, with transparent automatic fallback to local FAISS when offline.
 - **ChatGPT / Gemini Custom Component Input**: Custom in-capsule `+` attachment trigger modal with seamless Streamlit dialog integration.
