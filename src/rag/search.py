@@ -21,12 +21,16 @@ try:
     from .hybrid_retriever import HybridRetriever
     from .reranker import DocumentReranker
     from .multi_search import OmniSearchEngine
+    from .tracer import LLMOpsTracer
+    from .guardrails import AgenticGuardrail
 except ImportError:
     from rag.data_loader import load_all_documents, load_single_document
     from rag.vectorstore import FaissVectorStore
     from rag.hybrid_retriever import HybridRetriever
     from rag.reranker import DocumentReranker
     from rag.multi_search import OmniSearchEngine
+    from rag.tracer import LLMOpsTracer
+    from rag.guardrails import AgenticGuardrail
 
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -93,6 +97,8 @@ class RAGSearch:
         except Exception as e_db:
             print(f"[INFO] PostgreSQL client not initialized: {e_db}")
             self.pg_db = None
+
+        self.guardrail = AgenticGuardrail()
 
     @property
     def reranker(self) -> DocumentReranker:
@@ -212,29 +218,57 @@ class RAGSearch:
         top_k: int = 5,
         mode: str = "hybrid",
         use_reranker: bool = True,
-        enable_web_search: bool = True
+        enable_web_search: bool = True,
+        decompose_query: bool = False,
+        tracer: Optional[LLMOpsTracer] = None
     ) -> List[Dict[str, Any]]:
         """
         Retrieve the top matching document chunks with formatted metadata.
         Modes: 'hybrid' (BM25 + FAISS via RRF), 'dense' (FAISS only), 'sparse' (BM25 only).
-        When use_reranker=True, performs Two-Stage Retrieval (Cross-Encoder scoring on candidate pool).
-        When enable_web_search=True, augments with live multi-source web, Wikipedia, and ArXiv findings.
+        Supports Agentic Query Decomposition and LLMOps real-time tracing.
         """
-        # Stage 1: Candidate Generation (retrieve wider pool if re-ranking is active)
-        stage1_k = max(top_k * 3, 12) if use_reranker else top_k
+        # Optional Agentic Query Planning / Decomposition
+        sub_queries = [query]
+        if decompose_query and len(query.strip()) > 20:
+            d_span = tracer.start_span("Agentic Query Planner (Decomposition)") if tracer else None
+            try:
+                sub_queries = self.guardrail.decompose_query(query, llm=self.get_llm())
+            except Exception:
+                sub_queries = [query]
+            if d_span:
+                d_span.finish({"sub_queries": sub_queries})
 
-        if mode == "dense":
-            raw_results = self.hybrid.search_dense(query, top_k=stage1_k)
-        elif mode == "sparse":
-            raw_results = self.hybrid.search_sparse(query, top_k=stage1_k)
-        else:
-            raw_results = self.hybrid.search_hybrid(query, top_k=stage1_k)
+        # Stage 1: Candidate Generation
+        stage1_k = max(top_k * 3, 12) if use_reranker else top_k
+        s1_span = tracer.start_span(f"Stage 1 Retrieval ({mode.upper()})") if tracer else None
+
+        raw_candidates_map = {}
+        for q in sub_queries:
+            if mode == "dense":
+                sub_res = self.hybrid.search_dense(q, top_k=stage1_k)
+            elif mode == "sparse":
+                sub_res = self.hybrid.search_sparse(q, top_k=stage1_k)
+            else:
+                sub_res = self.hybrid.search_hybrid(q, top_k=stage1_k)
+
+            for item in sub_res:
+                key = item.get("text", "")[:100]
+                if key not in raw_candidates_map:
+                    raw_candidates_map[key] = item
+
+        raw_results = list(raw_candidates_map.values())
+        if s1_span:
+            s1_span.finish({"candidates_count": len(raw_results), "sub_queries_count": len(sub_queries)})
 
         # Stage 2: Cross-Encoder Re-Ranking
+        s2_span = tracer.start_span("Stage 2 MS-MARCO Cross-Encoder") if tracer else None
         if use_reranker and raw_results:
             raw_results = self.reranker.rerank(query=query, candidates=raw_results, top_k=top_k)
         else:
             raw_results = raw_results[:top_k]
+
+        if s2_span:
+            s2_span.finish({"reranked_count": len(raw_results)})
 
         citations = []
         for r in raw_results:
@@ -264,11 +298,14 @@ class RAGSearch:
 
         # Stage 3: Live External Search Augmentation (Wikipedia, ArXiv, Google/Serper)
         if enable_web_search and query.strip():
+            s3_span = tracer.start_span("Stage 3 Live External Search (OmniSearch)") if tracer else None
             try:
                 external_results = self.omni_search.search_all(query, max_results=2)
                 citations.extend(external_results)
             except Exception as e:
                 print(f"[WARN] External search failed: {e}")
+            if s3_span:
+                s3_span.finish({"external_count": len(citations) - len(raw_results)})
 
         # Record audit trail in PostgreSQL if connected
         if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected:
@@ -376,18 +413,58 @@ class RAGSearch:
         model_name: Optional[str] = None,
         retrieval_mode: str = "hybrid",
         use_reranker: bool = True,
-        enable_web_search: bool = True
+        enable_web_search: bool = True,
+        decompose_query: bool = False,
+        tracer: Optional[LLMOpsTracer] = None,
+        citations: Optional[List[Dict[str, Any]]] = None
     ) -> Generator[str, None, None]:
-        """Stream response tokens chunk by chunk."""
-        citations = self.search_context(
-            query,
-            top_k=top_k,
-            mode=retrieval_mode,
-            use_reranker=use_reranker,
-            enable_web_search=enable_web_search
-        )
+        """Stream response tokens chunk by chunk with real-time TTFT and token accounting."""
+        if citations is None:
+            citations = self.search_context(
+                query,
+                top_k=top_k,
+                mode=retrieval_mode,
+                use_reranker=use_reranker,
+                enable_web_search=enable_web_search,
+                decompose_query=decompose_query,
+                tracer=tracer
+            )
+
         messages = self._build_prompt_messages(query, citations, chat_history)
-        llm = self.get_llm(model_name=model_name)
+        chosen_model = model_name or self.default_model
+        llm = self.get_llm(model_name=chosen_model)
+
+        gen_span = tracer.start_span(f"LLM Generation ({chosen_model.split('/')[-1]})") if tracer else None
+
+        accumulated_text = []
+        is_first_token = True
+
         for chunk in llm.stream(messages):
             if hasattr(chunk, "content") and chunk.content:
-                yield sanitize_text(str(chunk.content))
+                text_chunk = sanitize_text(str(chunk.content))
+                if text_chunk:
+                    if is_first_token:
+                        if tracer:
+                            tracer.record_first_token()
+                        is_first_token = False
+                    accumulated_text.append(text_chunk)
+                    yield text_chunk
+
+        if tracer:
+            full_out = "".join(accumulated_text)
+            est_in_tokens = sum(len(str(m.content)) for m in messages) // 4
+            est_out_tokens = max(len(full_out) // 4, 1)
+            tracer.set_tokens(est_in_tokens, est_out_tokens, chosen_model)
+            if gen_span:
+                gen_span.finish({"prompt_tokens": est_in_tokens, "completion_tokens": est_out_tokens})
+
+    def verify_groundedness(
+        self,
+        query: str,
+        answer: str,
+        citations: List[Dict[str, Any]],
+        model_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Audit answer against citations to detect hallucinations."""
+        llm = self.get_llm(model_name=model_name, temperature=0.0)
+        return self.guardrail.verify_groundedness(query, answer, citations, llm=llm)

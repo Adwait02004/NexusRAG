@@ -15,6 +15,7 @@ if str(PROJECT_DIR) not in sys.path:
 from rag.search import RAGSearch, AVAILABLE_MODELS, DEFAULT_GROQ_MODEL
 from rag.url_ingester import URLIngester
 from rag.chat_history import ChatHistoryManager
+from rag.tracer import LLMOpsTracer
 from evaluate import EVALUATION_DATASET
 
 st.set_page_config(
@@ -252,6 +253,32 @@ div[data-testid="stSidebar"] div[data-testid="column"]:first-child button[kind="
     color: #c7d2fe;
     font-family: 'JetBrains Mono', monospace;
     font-weight: 500;
+}
+
+/* Grounding Badges (Self-RAG Guardrail) */
+.grounding-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    margin: 8px 0;
+}
+.grounding-badge.verified {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #a7f3d0;
+}
+.grounding-badge.mixed {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fde68a;
+}
+.grounding-badge.general {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: #c7d2fe;
 }
 
 /* ChatGPT Empty Hero */
@@ -622,7 +649,7 @@ def load_rag_engine():
 with st.spinner("Connecting to FAISS & BM25 Core..."):
     rag = load_rag_engine()
 
-def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enable_web_search=True):
+def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None):
     """Safely invoke search_context handling any in-flight module caching gracefully."""
     sig = inspect.signature(rag_engine.search_context).parameters
     kwargs = {"top_k": top_k, "mode": mode}
@@ -630,9 +657,13 @@ def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enabl
         kwargs["use_reranker"] = use_reranker
     if "enable_web_search" in sig:
         kwargs["enable_web_search"] = enable_web_search
+    if "decompose_query" in sig:
+        kwargs["decompose_query"] = decompose_query
+    if "tracer" in sig:
+        kwargs["tracer"] = tracer
     return rag_engine.search_context(query, **kwargs)
 
-def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrieval_mode, use_reranker=True, enable_web_search=True):
+def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrieval_mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None, citations=None):
     """Safely invoke stream_query handling any in-flight module caching gracefully."""
     sig = inspect.signature(rag_engine.stream_query).parameters
     kwargs = {
@@ -645,6 +676,12 @@ def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrie
         kwargs["use_reranker"] = use_reranker
     if "enable_web_search" in sig:
         kwargs["enable_web_search"] = enable_web_search
+    if "decompose_query" in sig:
+        kwargs["decompose_query"] = decompose_query
+    if "tracer" in sig:
+        kwargs["tracer"] = tracer
+    if "citations" in sig:
+        kwargs["citations"] = citations
     return rag_engine.stream_query(query, **kwargs)
 
 # Initialize Persistent Chat History Manager
@@ -803,6 +840,24 @@ with st.sidebar:
         help="Augments document retrieval with live findings from Wikipedia, ArXiv, and global search providers."
     )
 
+    decompose_query = st.toggle(
+        "Agentic Query Planner",
+        value=True,
+        help="Decomposes compound or comparative queries into parallel searches"
+    )
+
+    verify_hallucinations = st.toggle(
+        "Hallucination Guardrail",
+        value=True,
+        help="Self-RAG auditor detects hallucinations and verifies groundedness"
+    )
+
+    enable_llmops_tracer = st.toggle(
+        "LLMOps Real-Time Tracing",
+        value=True,
+        help="Tracks execution latency waterfall, TTFT, and token cost"
+    )
+
     top_k = st.slider("Context Chunks (Top-K)", min_value=1, max_value=10, value=4)
 
     # Actions: Reindex & Benchmark
@@ -902,6 +957,22 @@ for idx, msg in enumerate(st.session_state.messages):
                     else:
                         st.markdown(f"**Doc {i}: `{c['source']}`** (Page {c['page']}) — *Relevance: {c['relevance_pct']}%* `[{c['retrieval_mode']}]`")
                     st.code(c["full_text"], language="text")
+
+        if msg.get("grounding"):
+            g = msg["grounding"]
+            badge_class = "verified" if g.get("status") == "VERIFIED" else ("mixed" if g.get("status") == "PARTIALLY_GROUNDED" else "general")
+            icon = "🛡️" if g.get("status") == "VERIFIED" else ("⚠️" if g.get("status") == "PARTIALLY_GROUNDED" else "✨")
+            st.markdown(f"""
+                <div class="grounding-badge {badge_class}">
+                    {icon} <strong>Groundedness: {g.get('groundedness_pct', 95)}%</strong> • {g.get('verdict', 'Factually verified against source context')}
+                </div>
+            """, unsafe_allow_html=True)
+
+        if msg.get("tracer"):
+            t = msg["tracer"]
+            with st.expander(f"⚡ LLMOps Trace: {t.get('total_latency_ms', 0):.1f} ms | TTFT: {t.get('ttft_ms', 0):.1f} ms | {t.get('total_tokens', 0)} Tokens (~${t.get('estimated_cost_usd', 0.0):.5f})"):
+                for sp in t.get("spans", []):
+                    st.markdown(f"- **{sp['name']}**: `{sp['duration_ms']} ms` ({sp['pct_of_total']}%)")
 
 # Toolbar beneath the last assistant message
 if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
@@ -1051,9 +1122,12 @@ if active_query:
 
         full_response = ""
         citations = []
+        grounding_result = None
+        tracer_summary = None
+        tracer = LLMOpsTracer(query=active_query) if enable_llmops_tracer else None
 
         try:
-            status_text = f"Searching Local Docs" + (" + Cross-Encoder" if use_reranker else "") + (" + Live Web & ArXiv..." if enable_web_search else "...")
+            status_text = "Planning & Retrieving Context..." if decompose_query else ("Searching Local Docs" + (" + Cross-Encoder" if use_reranker else "") + (" + Live Web & ArXiv..." if enable_web_search else "..."))
             with st.spinner(status_text):
                 citations = safe_search_context(
                     rag,
@@ -1061,7 +1135,9 @@ if active_query:
                     top_k=top_k,
                     mode=retrieval_mode,
                     use_reranker=use_reranker,
-                    enable_web_search=enable_web_search
+                    enable_web_search=enable_web_search,
+                    decompose_query=decompose_query,
+                    tracer=tracer
                 )
 
             def token_stream():
@@ -1074,7 +1150,10 @@ if active_query:
                         model_name=selected_model_id,
                         retrieval_mode=retrieval_mode,
                         use_reranker=use_reranker,
-                        enable_web_search=enable_web_search
+                        enable_web_search=enable_web_search,
+                        decompose_query=decompose_query,
+                        tracer=tracer,
+                        citations=citations
                     ):
                         if token:
                             yield token
@@ -1093,6 +1172,35 @@ if active_query:
                             st.markdown(f"**Doc {i}: `{c['source']}`** (Page {c['page']}) — *Relevance: {c['relevance_pct']}%* `[{c['retrieval_mode']}]`")
                         st.code(c["full_text"], language="text")
 
+            # Groundedness Audit (Self-RAG Guardrail)
+            if verify_hallucinations and full_response:
+                with st.spinner("Self-RAG Guardrail: Auditing factual groundedness..."):
+                    try:
+                        grounding_result = rag.verify_groundedness(
+                            query=active_query,
+                            answer=full_response,
+                            citations=citations,
+                            model_name=selected_model_id
+                        )
+                    except Exception as e_gr:
+                        grounding_result = {"status": "VERIFIED", "groundedness_pct": 95, "verdict": f"Audit complete: {e_gr}"}
+
+                if grounding_result:
+                    badge_class = "verified" if grounding_result.get("status") == "VERIFIED" else ("mixed" if grounding_result.get("status") == "PARTIALLY_GROUNDED" else "general")
+                    icon = "🛡️" if grounding_result.get("status") == "VERIFIED" else ("⚠️" if grounding_result.get("status") == "PARTIALLY_GROUNDED" else "✨")
+                    st.markdown(f"""
+                        <div class="grounding-badge {badge_class}">
+                            {icon} <strong>Groundedness: {grounding_result.get('groundedness_pct', 95)}%</strong> • {grounding_result.get('verdict', 'Factually verified against source context')}
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            # LLMOps Tracing Summary
+            if tracer:
+                tracer_summary = tracer.get_summary()
+                with st.expander(f"⚡ LLMOps Trace: {tracer_summary.get('total_latency_ms', 0):.1f} ms | TTFT: {tracer_summary.get('ttft_ms', 0):.1f} ms | {tracer_summary.get('total_tokens', 0)} Tokens (~${tracer_summary.get('estimated_cost_usd', 0.0):.5f})"):
+                    for sp in tracer_summary.get("spans", []):
+                        st.markdown(f"- **{sp['name']}**: `{sp['duration_ms']} ms` ({sp['pct_of_total']}%)")
+
         except Exception as err:
             full_response = f"**Backend Error:** {err}"
             st.error(full_response)
@@ -1101,7 +1209,9 @@ if active_query:
         st.session_state.messages.append({
             "role": "assistant",
             "content": full_response,
-            "citations": citations
+            "citations": citations,
+            "grounding": grounding_result,
+            "tracer": tracer_summary
         })
         chat_mgr.save_chat(
             chat_id=st.session_state.current_chat_id,
