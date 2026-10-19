@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusRAG Gemini Input</title>
+    <title>NexusRAG Input</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -15,9 +15,9 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: transparent;
-            color: #f1f5f9;
+            color: #f3f4f6;
             overflow: hidden;
             width: 100%;
             height: 100%;
@@ -25,41 +25,172 @@
 
         .container {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1040px;
             margin: 0 auto;
             padding: 4px 6px;
+        }
+
+        /* ─── Gemini Style Rounded Chat Input Capsule ─── */
+        .chat-capsule {
+            width: 100%;
+            background: #1c1d22;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 22px;
+            padding: 12px 16px 10px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .chat-capsule.focused {
+            border-color: #ff5722;
+            background: #1e2027;
+            box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2), 0 12px 36px rgba(0, 0, 0, 0.8);
+        }
+
+        /* ─── Uploaded Document Badges / Chips Row ─── */
+        .attachments-row {
+            display: none;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 2px 2px 4px 2px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
+        .attachments-row.has-docs {
             display: flex;
             align-items: center;
         }
 
-        /* --- THE CHAT INPUT CAPSULE --- */
-        .input-bar {
+        /* ─── Document Card (Matches Screenshot) ─── */
+        .doc-card {
+            width: 82px;
+            height: 80px;
+            min-width: 82px;
+            min-height: 80px;
+            background: #2a2c33;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 9px 10px 8px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            transition: transform 0.18s ease, border-color 0.18s ease;
+            user-select: none;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 87, 34, 0.45);
+        }
+
+        .doc-card-type {
+            font-size: 11px;
+            font-weight: 700;
+            color: #9aa0a6;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .doc-card-remove {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease, background 0.15s ease;
+        }
+
+        .doc-card:hover .doc-card-remove {
+            opacity: 1;
+        }
+
+        .doc-card-remove:hover {
+            background: #ff5722;
+            color: #fff;
+        }
+
+        .doc-card-name {
+            font-size: 11px;
+            font-weight: 500;
+            color: #f1f3f4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.25;
+        }
+
+        /* ─── Text Input Area ─── */
+        .text-input-wrap {
             width: 100%;
-            background: #0f172a;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 24px;
-            padding: 5px 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .text-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #f3f4f6;
+            font-family: inherit;
+            font-size: 0.96rem;
+            line-height: 1.45;
+            resize: none;
+            max-height: 120px;
+            min-height: 26px;
+            padding: 2px 0;
+        }
+
+        .text-input::placeholder {
+            color: #80868b;
+        }
+
+        /* ─── Bottom Actions Row ─── */
+        .bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding-top: 2px;
+        }
+
+        .left-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .right-actions {
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .input-bar.focused {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3), 0 10px 35px rgba(0, 0, 0, 0.6);
-        }
-
-        /* Gemini Plus Button */
+        /* ─── Plus Button ─── */
         .plus-btn {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            width: 36px;
-            height: 36px;
-            min-width: 36px;
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
             border-radius: 50%;
-            color: #94a3b8;
+            color: #ff8a65;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -69,95 +200,239 @@
         }
 
         .plus-btn:hover {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(168, 85, 247, 0.3));
-            border-color: rgba(99, 102, 241, 0.6);
+            background: linear-gradient(135deg, rgba(255, 87, 34, 0.35), rgba(244, 63, 94, 0.35));
+            border-color: rgba(255, 87, 34, 0.6);
             color: #ffffff;
-            transform: scale(1.08);
-            box-shadow: 0 0 14px rgba(99, 102, 241, 0.4);
+            transform: scale(1.06);
+            box-shadow: 0 0 14px rgba(255, 87, 34, 0.35);
         }
 
         .plus-btn:active {
-            transform: scale(0.96);
+            transform: scale(0.94);
         }
 
-        /* Multiline Textarea */
-        .text-input {
-            flex: 1;
+        /* ─── Model Indicator Pill ─── */
+        .model-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 5px 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #c4c7c5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: default;
+            user-select: none;
+        }
+
+        .model-pill svg {
+            opacity: 0.7;
+        }
+
+        /* ─── Mic / Voice Icon ─── */
+        .mic-btn {
             background: transparent;
             border: none;
-            outline: none;
-            color: #f1f5f9;
-            font-family: inherit;
-            font-size: 0.94rem;
-            line-height: 1.45;
-            resize: none;
-            max-height: 120px;
-            min-height: 24px;
-            padding: 6px 2px;
+            width: 32px;
+            height: 32px;
+            color: #9aa0a6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
         }
 
-        .text-input::placeholder {
-            color: #64748b;
+        .mic-btn:hover {
+            color: #e5e7eb;
+            background: rgba(255, 255, 255, 0.06);
         }
 
-        /* Send Button */
+        /* ─── Send Button ─── */
         .send-btn {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.06);
             border: none;
             width: 34px;
             height: 34px;
             min-width: 34px;
             border-radius: 50%;
-            color: #64748b;
+            color: #6b7280;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             user-select: none;
         }
 
         .send-btn.active {
-            background: linear-gradient(135deg, #6366f1, #a855f7);
+            background: linear-gradient(135deg, #ff5722 0%, #f43f5e 100%);
             color: #ffffff;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 16px rgba(244, 63, 94, 0.45);
             cursor: pointer;
         }
 
         .send-btn.active:hover {
-            transform: scale(1.06);
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
+        }
+
+        /* ─── Light Mode Overrides ─── */
+        body.light-mode {
+            color: #0f172a;
+        }
+        body.light-mode .chat-capsule {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        body.light-mode .chat-capsule.focused {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15), 0 12px 36px rgba(0, 0, 0, 0.1);
+        }
+        body.light-mode #messageInput {
+            color: #0f172a;
+        }
+        body.light-mode #messageInput::placeholder {
+            color: #94a3b8;
+        }
+        body.light-mode .doc-card {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        body.light-mode .doc-card:hover {
+            border-color: #4f46e5;
+        }
+        body.light-mode .doc-card-type {
+            color: #4f46e5;
+        }
+        body.light-mode .doc-card-name {
+            color: #1e293b;
+        }
+        body.light-mode .doc-card-remove {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #64748b;
+        }
+        body.light-mode .doc-card-remove:hover {
+            background: #f43f5e;
+            color: #ffffff;
+        }
+        body.light-mode .plus-btn {
+            background: rgba(79, 70, 229, 0.08);
+            border-color: rgba(79, 70, 229, 0.25);
+            color: #4f46e5;
+        }
+        body.light-mode .plus-btn svg {
+            stroke: #4f46e5;
+        }
+        body.light-mode .plus-btn:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+        body.light-mode .plus-btn:hover svg {
+            stroke: #ffffff;
+        }
+        body.light-mode .model-pill {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-mode .model-pill svg path {
+            fill: #4f46e5;
+        }
+        body.light-mode .mic-btn {
+            color: #64748b;
+        }
+        body.light-mode .mic-btn:hover {
+            color: #0f172a;
+            background: rgba(0, 0, 0, 0.05);
+        }
+        body.light-mode .send-btn {
+            background: #e2e8f0;
+            color: #94a3b8;
+        }
+        body.light-mode .send-btn.active {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="input-bar" id="inputBar">
-            <!-- Gemini Plus Button -->
-            <button class="plus-btn" id="plusBtn" title="Ask Gemini — Upload Files, Images & Web Links">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-            </button>
+    <div class="container" id="mainContainer">
+        <div class="chat-capsule" id="chatCapsule">
+            <!-- 1. Uploaded Document Chips (Displayed above input as in Gemini screenshot) -->
+            <div class="attachments-row" id="attachmentsRow">
+                <!-- Dynamically populated doc cards -->
+            </div>
 
-            <!-- Text Input -->
-            <textarea class="text-input" id="messageInput" rows="1" placeholder="Message NexusRAG..."></textarea>
+            <!-- 2. Text Input Area -->
+            <div class="text-input-wrap">
+                <textarea class="text-input" id="messageInput" rows="1" placeholder="Ask NexusRAG..."></textarea>
+            </div>
 
-            <!-- Send Button -->
-            <button class="send-btn" id="sendBtn" title="Send message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="19" x2="12" y2="5"></line>
-                    <polyline points="5 12 12 5 19 12"></polyline>
-                </svg>
-            </button>
+            <!-- 3. Bottom Controls Row -->
+            <div class="bottom-row">
+                <div class="left-actions">
+                    <!-- Plus Button -->
+                    <button class="plus-btn" id="plusBtn" title="Upload Files & Resources (+)">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <!-- Hidden file picker for direct file selection -->
+                    <input type="file" multiple id="hiddenFileInput" style="display:none;" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.json,.png,.jpg,.jpeg">
+                </div>
+
+                <div class="right-actions">
+                    <!-- Model Indicator Badge -->
+                    <div class="model-pill" id="modelPill" title="Active Engine Model">
+                        <span id="modelNameText">Flash-Lite</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+
+                    <!-- Mic Icon (Screenshot Aesthetic) -->
+                    <button class="mic-btn" id="micBtn" title="Voice Dictation">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="22"></line>
+                        </svg>
+                    </button>
+
+                    <!-- Send Button -->
+                    <button class="send-btn" id="sendBtn" title="Send message">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         const plusBtn = document.getElementById('plusBtn');
+        const hiddenFileInput = document.getElementById('hiddenFileInput');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        const inputBar = document.getElementById('inputBar');
+        const chatCapsule = document.getElementById('chatCapsule');
+        const attachmentsRow = document.getElementById('attachmentsRow');
+        const modelNameText = document.getElementById('modelNameText');
+        const micBtn = document.getElementById('micBtn');
+
+        let currentActiveDocs = [];
 
         function sendToStreamlit(type, data) {
             window.parent.postMessage(Object.assign({
@@ -167,13 +442,68 @@
         }
 
         function notifyFrameHeight() {
-            sendToStreamlit("streamlit:setFrameHeight", { height: 68 });
+            const h = document.getElementById('chatCapsule').offsetHeight + 14;
+            sendToStreamlit("streamlit:setFrameHeight", { height: Math.max(h, 68) });
         }
 
-        // Clicking the + button triggers the Gemini dialog in Streamlit
+        // Render document chips inside the chat input bar
+        function renderDocumentCards(docs) {
+            currentActiveDocs = docs || [];
+            attachmentsRow.innerHTML = '';
+
+            if (currentActiveDocs.length === 0) {
+                attachmentsRow.classList.remove('has-docs');
+                notifyFrameHeight();
+                return;
+            }
+
+            attachmentsRow.classList.add('has-docs');
+            currentActiveDocs.forEach((docName) => {
+                const card = document.createElement('div');
+                card.className = 'doc-card';
+                card.title = docName;
+
+                // Extract extension for the uppercase header tag (e.g. PDF, TXT)
+                const parts = docName.split('.');
+                const ext = parts.length > 1 ? parts.pop().toUpperCase() : 'DOC';
+
+                // Truncate name cleanly
+                let displayName = docName;
+                if (displayName.length > 13) {
+                    displayName = displayName.substring(0, 10) + '...';
+                }
+
+                card.innerHTML = `
+                    <div class="doc-card-type">${ext}</div>
+                    <button class="doc-card-remove" title="Remove ${docName}">×</button>
+                    <div class="doc-card-name">${displayName}</div>
+                `;
+
+                // Handle removal of document directly from the input card
+                const removeBtn = card.querySelector('.doc-card-remove');
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sendToStreamlit("streamlit:setComponentValue", {
+                        value: {
+                            action: "remove_document",
+                            doc_name: docName,
+                            timestamp: Date.now()
+                        }
+                    });
+                });
+
+                attachmentsRow.appendChild(card);
+            });
+
+            setTimeout(notifyFrameHeight, 30);
+        }
+
+        // Clicking + button opens the file attachment menu / uploader
         plusBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            // Trigger Streamlit dialog for rich multi-tab upload (PDFs, Images, URLs)
             sendToStreamlit("streamlit:setComponentValue", {
                 value: {
                     action: "open_gemini_menu",
@@ -183,8 +513,8 @@
         });
 
         // Focus styling
-        messageInput.addEventListener('focus', () => inputBar.classList.add('focused'));
-        messageInput.addEventListener('blur', () => inputBar.classList.remove('focused'));
+        messageInput.addEventListener('focus', () => chatCapsule.classList.add('focused'));
+        messageInput.addEventListener('blur', () => chatCapsule.classList.remove('focused'));
 
         messageInput.addEventListener('input', () => {
             messageInput.style.height = 'auto';
@@ -195,17 +525,21 @@
             } else {
                 sendBtn.classList.remove('active');
             }
+            notifyFrameHeight();
         });
 
-        // Send submission
+        // Submit message
         function submitMessage() {
             const text = messageInput.value.trim();
             if (!text) return;
+
+            const attached = currentActiveDocs.slice();
 
             sendToStreamlit("streamlit:setComponentValue", {
                 value: {
                     action: "send_message",
                     text: text,
+                    attached_docs: attached,
                     timestamp: Date.now()
                 }
             });
@@ -213,6 +547,11 @@
             messageInput.value = '';
             messageInput.style.height = 'auto';
             sendBtn.classList.remove('active');
+            
+            // Clear staged attachments from input bar as they move to the main UI conversation
+            currentActiveDocs = [];
+            renderDocumentCards([]);
+            notifyFrameHeight();
         }
 
         sendBtn.addEventListener('click', submitMessage);
@@ -224,17 +563,71 @@
             }
         });
 
+        // Mic Dictation Demo
+        micBtn.addEventListener('click', () => {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.start();
+                micBtn.style.color = '#ff5722';
+                recognition.onresult = (evt) => {
+                    const transcript = evt.results[0][0].transcript;
+                    messageInput.value = (messageInput.value + ' ' + transcript).trim();
+                    messageInput.dispatchEvent(new Event('input'));
+                    micBtn.style.color = '#9aa0a6';
+                };
+                recognition.onerror = () => { micBtn.style.color = '#9aa0a6'; };
+                recognition.onend = () => { micBtn.style.color = '#9aa0a6'; };
+            } else {
+                messageInput.focus();
+            }
+        });
+
         // Init
         window.addEventListener('DOMContentLoaded', () => {
+            try {
+                const cachedTheme = localStorage.getItem('nexusrag_theme');
+                if (cachedTheme === 'light') {
+                    document.body.classList.add('light-mode');
+                } else if (cachedTheme === 'dark') {
+                    document.body.classList.remove('light-mode');
+                }
+            } catch(e) {}
             sendToStreamlit("streamlit:componentReady", { apiVersion: 1 });
             notifyFrameHeight();
         });
 
         window.addEventListener('message', (event) => {
             if (event.data.type === 'streamlit:render') {
+                const args = event.data.args || {};
+                
+                // Update active documents display
+                if (args.active_docs !== undefined) {
+                    renderDocumentCards(args.active_docs);
+                }
+
+                // Update model pill text if passed
+                if (args.current_model) {
+                    const shortName = args.current_model.split(' ')[0] || "Flash-Lite";
+                    modelNameText.textContent = shortName;
+                }
+
+                // Update theme mode
+                if (args.theme) {
+                    try { localStorage.setItem('nexusrag_theme', args.theme); } catch(e) {}
+                    if (args.theme === 'light') {
+                        document.body.classList.add('light-mode');
+                    } else {
+                        document.body.classList.remove('light-mode');
+                    }
+                }
+
                 notifyFrameHeight();
             }
         });
+
+        window.addEventListener('resize', notifyFrameHeight);
     </script>
 </body>
 </html>

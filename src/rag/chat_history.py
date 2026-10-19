@@ -34,7 +34,7 @@ class ChatHistoryManager:
         rand_suffix = uuid.uuid4().hex[:6]
         return f"chat_{timestamp}_{rand_suffix}"
 
-    def list_chats(self) -> List[Dict[str, Any]]:
+    def list_chats(self, include_archived: bool = False) -> List[Dict[str, Any]]:
         """List all saved conversations, sorted with the most recent first."""
         chats = []
         if not self.storage_dir.exists():
@@ -44,12 +44,16 @@ class ChatHistoryManager:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                    is_archived = data.get("is_archived", False)
+                    if not include_archived and is_archived:
+                        continue
                     chats.append({
                         "id": data.get("id", file_path.stem),
                         "title": data.get("title", "Untitled Chat"),
                         "created_at": data.get("created_at", file_path.stat().st_ctime),
                         "updated_at": data.get("updated_at", file_path.stat().st_mtime),
-                        "message_count": len(data.get("messages", []))
+                        "message_count": len(data.get("messages", [])),
+                        "is_archived": is_archived
                     })
             except Exception as e:
                 print(f"[WARN] Failed to read chat history {file_path.name}: {e}")
@@ -57,6 +61,62 @@ class ChatHistoryManager:
         # Sort descending by updated_at
         chats.sort(key=lambda x: x["updated_at"], reverse=True)
         return chats
+
+    def list_archived_chats(self) -> List[Dict[str, Any]]:
+        """List all archived conversations."""
+        archived = []
+        if not self.storage_dir.exists():
+            return archived
+
+        for file_path in self.storage_dir.glob("*.json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if data.get("is_archived", False):
+                        archived.append({
+                            "id": data.get("id", file_path.stem),
+                            "title": data.get("title", "Untitled Chat"),
+                            "created_at": data.get("created_at", file_path.stat().st_ctime),
+                            "updated_at": data.get("updated_at", file_path.stat().st_mtime),
+                            "message_count": len(data.get("messages", []))
+                        })
+            except Exception as e:
+                print(f"[WARN] Failed to read archived chat {file_path.name}: {e}")
+
+        archived.sort(key=lambda x: x["updated_at"], reverse=True)
+        return archived
+
+    def archive_chat(self, chat_id: str) -> bool:
+        """Mark a chat session as archived."""
+        file_path = self.storage_dir / f"{chat_id}.json"
+        if file_path.exists():
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                data["is_archived"] = True
+                data["updated_at"] = time.time()
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                return True
+            except Exception as e:
+                print(f"[ERROR] Failed to archive chat {chat_id}: {e}")
+        return False
+
+    def unarchive_chat(self, chat_id: str) -> bool:
+        """Restore an archived chat session back to active list."""
+        file_path = self.storage_dir / f"{chat_id}.json"
+        if file_path.exists():
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                data["is_archived"] = False
+                data["updated_at"] = time.time()
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                return True
+            except Exception as e:
+                print(f"[ERROR] Failed to unarchive chat {chat_id}: {e}")
+        return False
 
     def load_chat(self, chat_id: str) -> Optional[Dict[str, Any]]:
         """Load messages and metadata for a specific chat."""

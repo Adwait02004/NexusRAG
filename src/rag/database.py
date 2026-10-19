@@ -331,3 +331,99 @@ class PostgresVectorDB:
                 })
         except Exception as e:
             logger.warning(f"Failed to write audit log: {e}")
+
+
+import sqlite3
+from pathlib import Path
+
+class SQLiteDocumentDB:
+    """
+    Embedded ACID-compliant SQLite Document & Chunk Database.
+    Guarantees every uploaded document and chunk is permanently saved locally
+    in data/nexusrag.db with zero external database configuration required.
+    """
+    def __init__(self, db_path: str | Path = "data/nexusrag.db"):
+        self.db_path = Path(db_path)
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._init_db()
+
+    def _get_connection(self):
+        conn = sqlite3.connect(str(self.db_path), timeout=15)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_connection() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS documents (
+                    id TEXT PRIMARY KEY,
+                    filename TEXT NOT NULL,
+                    file_type TEXT NOT NULL,
+                    file_size_bytes INTEGER NOT NULL,
+                    sha256_hash TEXT UNIQUE NOT NULL,
+                    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    chunk_count INTEGER NOT NULL DEFAULT 0,
+                    preview_text TEXT
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS document_chunks (
+                    id TEXT PRIMARY KEY,
+                    document_id TEXT NOT NULL,
+                    chunk_index INTEGER NOT NULL,
+                    content TEXT NOT NULL,
+                    metadata TEXT NOT NULL,
+                    FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_doc_chunks_doc_id ON document_chunks (document_id)
+            """)
+            conn.commit()
+
+    def store_document(
+        self,
+        filename: str,
+        file_type: str,
+        raw_bytes: bytes,
+        chunks: List[Any],
+        text_preview: str = ""
+    ) -> str:
+        file_hash = hashlib.sha256(raw_bytes).hexdigest()
+        file_size = len(raw_bytes)
+        doc_id = hashlib.md5(filename.encode("utf-8")).hexdigest()
+
+        with self._get_connection() as conn:
+            conn.execute("""
+                INSERT INTO documents (id, filename, file_type, file_size_bytes, sha256_hash, uploaded_at, chunk_count, preview_text)
+                VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?)
+                ON CONFLICT(sha256_hash) DO UPDATE SET
+                    filename = excluded.filename,
+                    uploaded_at = datetime('now'),
+                    chunk_count = excluded.chunk_count,
+                    preview_text = excluded.preview_text
+            """, (doc_id, filename, file_type, file_size, file_hash, len(chunks), text_preview[:500]))
+
+            conn.execute("DELETE FROM document_chunks WHERE document_id = ?", (doc_id,))
+            for idx, c in enumerate(chunks):
+                chunk_id = f"{doc_id}_{idx}"
+                content = c.page_content if hasattr(c, "page_content") else (c.get("text", "") if isinstance(c, dict) else str(c))
+                meta_dict = c.metadata if hasattr(c, "metadata") else (c if isinstance(c, dict) else {})
+                meta = json.dumps(meta_dict)
+                conn.execute("""
+                    INSERT INTO document_chunks (id, document_id, chunk_index, content, metadata)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (chunk_id, doc_id, idx, content, meta))
+            conn.commit()
+        return doc_id
+
+    def remove_document(self, filename: str):
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM documents WHERE filename = ?", (filename,))
+            conn.commit()
+
+    def get_all_documents(self) -> List[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cur = conn.execute("SELECT * FROM documents ORDER BY uploaded_at DESC")
+            return [dict(row) for row in cur.fetchall()]
+

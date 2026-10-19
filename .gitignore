@@ -20,6 +20,7 @@ venv/
 scratch/
 .system_generated/
 *.log
+*.db
 data/vector_store/
 faiss_store/
 data/text_files/*

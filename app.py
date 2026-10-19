@@ -13,13 +13,12 @@ if venv_python.exists():
         current_exe = Path(sys.executable).resolve()
         target_exe = venv_python.resolve()
         if current_exe != target_exe:
-            print(f"[INFO] Switching to project virtual environment: {target_exe}")
             res = subprocess.run([str(target_exe), str(Path(__file__).resolve())] + sys.argv[1:])
             sys.exit(res.returncode)
     except KeyboardInterrupt:
         sys.exit(0)
-    except Exception as e:
-        print(f"[WARN] Auto-switch to .venv failed: {e}")
+    except Exception:
+        pass
 
 # Add src to sys.path
 SRC_DIR = PROJECT_DIR / "src"
@@ -30,8 +29,28 @@ if str(PROJECT_DIR) not in sys.path:
 
 import argparse
 
+def disable_windows_quickedit():
+    """Disable QuickEdit Mode in Windows console to prevent clicks from freezing execution."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            # STD_INPUT_HANDLE = -10
+            h_stdin = kernel32.GetStdHandle(-10)
+            mode = ctypes.c_ulong()
+            if kernel32.GetConsoleMode(h_stdin, ctypes.byref(mode)):
+                # ENABLE_QUICK_EDIT_MODE = 0x0040, ENABLE_EXTENDED_FLAGS = 0x0080
+                new_mode = (mode.value & ~0x0040) | 0x0080
+                kernel32.SetConsoleMode(h_stdin, new_mode)
+        except Exception:
+            pass
+
+
 if __name__ == "__main__":
     try:
+        disable_windows_quickedit()
+        os.environ["PYTHONUNBUFFERED"] = "1"
+
         # Ensure stdout handles UTF-8 on Windows
         if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
             try:
@@ -72,16 +91,8 @@ if __name__ == "__main__":
                 print(f"- {c['source']} (Page {c['page']}) [Score: {c['score']}] [{c.get('retrieval_mode', 'hybrid')}]")
             print("="*55 + "\n")
         else:
-            # Launch Streamlit 100% Pure Python Web Studio
+            # Launch Streamlit 100% Pure Python Web Studio with supervisor loop
             streamlit_script = PROJECT_DIR / "src" / "rag" / "streamlit_app.py"
-            print("\n" + "="*65)
-            print("   🚀 LAUNCHING NEXUSRAG STUDIO (100% PURE PYTHON)")
-            print("="*65)
-            print(f"   ► URL:           http://localhost:{args.port}")
-            print(f"   ► Architecture:  Hybrid Search (BM25 + FAISS via RRF)")
-            print(f"   ► Inference:     Groq Ultra-Fast API")
-            print(f"   ► Evaluation:    python app.py --eval")
-            print("="*65 + "\n")
 
             streamlit_cmd = [
                 sys.executable,
@@ -91,13 +102,26 @@ if __name__ == "__main__":
                 str(streamlit_script),
                 f"--server.port={args.port}",
                 "--server.headless=false",
-                "--server.fileWatcherType=none",
+                "--server.fileWatcherType=auto",
+                "--server.runOnSave=true",
                 "--browser.gatherUsageStats=false"
             ]
-            try:
-                subprocess.run(streamlit_cmd)
-            except KeyboardInterrupt:
-                pass
+
+            import time
+            while True:
+                try:
+                    res = subprocess.run(streamlit_cmd)
+                    if res.returncode == 0:
+                        break
+                    print("\n" + "="*58)
+                    print(f"  ⚠️  Studio process exited with code {res.returncode}.")
+                    print("  🔄 Terminal Supervisor: Keeping server alive...")
+                    print("  Waiting 2s before auto-restarting smoothly...")
+                    print("="*58 + "\n")
+                    time.sleep(2)
+                except KeyboardInterrupt:
+                    print("\n[INFO] Studio stopped cleanly by user.")
+                    break
     except KeyboardInterrupt:
         print("\n[INFO] Studio stopped cleanly.")
         sys.exit(0)
