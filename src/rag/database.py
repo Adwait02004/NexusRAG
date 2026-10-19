@@ -141,6 +141,16 @@ class PostgresVectorDB:
             top_chunks_count INT NOT NULL,
             executed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
+
+        -- 6. Shared Cloud Chat Sessions (Supabase Sync)
+        CREATE TABLE IF NOT EXISTS chat_sessions (
+            id VARCHAR(100) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+            is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
         """
         try:
             with self.engine.begin() as conn:
@@ -331,6 +341,113 @@ class PostgresVectorDB:
                 })
         except Exception as e:
             logger.warning(f"Failed to write audit log: {e}")
+
+    def save_chat_session(self, chat_id: str, title: str, messages: List[Dict[str, Any]], is_archived: bool = False):
+        """Save or update chat session in PostgreSQL / Supabase."""
+        if not self.is_connected:
+            return
+        from sqlalchemy import text
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(text("""
+                    INSERT INTO chat_sessions (id, title, messages, is_archived, updated_at)
+                    VALUES (:id, :title, :messages, :archived, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE SET
+                        title = EXCLUDED.title,
+                        messages = EXCLUDED.messages,
+                        is_archived = EXCLUDED.is_archived,
+                        updated_at = CURRENT_TIMESTAMP;
+                """), {
+                    "id": chat_id,
+                    "title": title,
+                    "messages": json.dumps(messages),
+                    "archived": is_archived
+                })
+        except Exception as e:
+            logger.warning(f"Failed to save chat session to PostgreSQL: {e}")
+
+    def load_chat_session(self, chat_id: str) -> Optional[Dict[str, Any]]:
+        """Load chat session from PostgreSQL / Supabase."""
+        if not self.is_connected:
+            return None
+        from sqlalchemy import text
+        import time
+        try:
+            with self.engine.connect() as conn:
+                row = conn.execute(text("""
+                    SELECT id, title, messages, is_archived, created_at, updated_at
+                    FROM chat_sessions WHERE id = :id;
+                """), {"id": chat_id}).fetchone()
+                if row:
+                    msgs = row[2] if isinstance(row[2], list) else json.loads(row[2])
+                    return {
+                        "id": row[0],
+                        "title": row[1],
+                        "messages": msgs,
+                        "is_archived": bool(row[3]),
+                        "created_at": row[4].timestamp() if row[4] else time.time(),
+                        "updated_at": row[5].timestamp() if row[5] else time.time()
+                    }
+        except Exception as e:
+            logger.warning(f"Failed to load chat session from PostgreSQL: {e}")
+        return None
+
+    def list_chat_sessions(self, include_archived: bool = False) -> List[Dict[str, Any]]:
+        """List chat sessions from PostgreSQL / Supabase."""
+        if not self.is_connected:
+            return []
+        from sqlalchemy import text
+        try:
+            with self.engine.connect() as conn:
+                query = "SELECT id, title, messages, is_archived, created_at, updated_at FROM chat_sessions"
+                if not include_archived:
+                    query += " WHERE is_archived = FALSE"
+                query += " ORDER BY updated_at DESC;"
+                rows = conn.execute(text(query)).fetchall()
+                chats = []
+                for r in rows:
+                    msgs = r[2] if isinstance(r[2], list) else json.loads(r[2])
+                    chats.append({
+                        "id": r[0],
+                        "title": r[1],
+                        "created_at": r[4].timestamp() if r[4] else 0,
+                        "updated_at": r[5].timestamp() if r[5] else 0,
+                        "message_count": len(msgs),
+                        "is_archived": bool(r[3])
+                    })
+                return chats
+        except Exception as e:
+            logger.warning(f"Failed to list chat sessions from PostgreSQL: {e}")
+        return []
+
+    def set_chat_archived(self, chat_id: str, is_archived: bool) -> bool:
+        """Archive or unarchive chat session in PostgreSQL / Supabase."""
+        if not self.is_connected:
+            return False
+        from sqlalchemy import text
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(text("""
+                    UPDATE chat_sessions SET is_archived = :archived, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = :id;
+                """), {"id": chat_id, "archived": is_archived})
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to set chat archive state in PostgreSQL: {e}")
+            return False
+
+    def delete_chat_session(self, chat_id: str) -> bool:
+        """Delete chat session from PostgreSQL / Supabase."""
+        if not self.is_connected:
+            return False
+        from sqlalchemy import text
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(text("DELETE FROM chat_sessions WHERE id = :id;"), {"id": chat_id})
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to delete chat session from PostgreSQL: {e}")
+            return False
 
 
 import sqlite3

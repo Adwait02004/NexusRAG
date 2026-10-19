@@ -10,14 +10,31 @@ class ChatHistoryManager:
     Manages persistent user chat sessions stored on disk as JSON files.
     Allows loading, updating, listing, and deleting conversations just like ChatGPT.
     """
-    def __init__(self, storage_dir: Optional[Path | str] = None):
+    def __init__(self, storage_dir: Optional[Path | str] = None, pg_db: Optional[Any] = None):
         if storage_dir is None:
-            # Default to data/chats under project root
-            project_root = Path(__file__).resolve().parents[2]
+            # Default to data/chats under project root safely
+            _curr = Path(__file__).resolve()
+            _root = None
+            for _p in [_curr.parent, *_curr.parents]:
+                if (_p / "data").exists() or (_p / "pyproject.toml").exists():
+                    _root = _p
+                    break
+            project_root = _root or _curr.parents[2]
             storage_dir = project_root / "data" / "chats"
         
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
+        self.pg_db = pg_db
+
+        # Auto-connect to PostgreSQL / Supabase if environment variables exist
+        if self.pg_db is None and (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_URL")):
+            try:
+                from rag.database import PostgresVectorDB
+                cand = PostgresVectorDB()
+                if cand.is_connected:
+                    self.pg_db = cand
+            except Exception:
+                pass
         
         # Ensure .gitkeep exists
         gitkeep = self.storage_dir / ".gitkeep"
@@ -36,6 +53,16 @@ class ChatHistoryManager:
 
     def list_chats(self, include_archived: bool = False) -> List[Dict[str, Any]]:
         """List all saved conversations, sorted with the most recent first."""
+        # 1. Check Cloud PostgreSQL / Supabase
+        if self.pg_db and self.pg_db.is_connected:
+            try:
+                cloud_chats = self.pg_db.list_chat_sessions(include_archived=include_archived)
+                if cloud_chats:
+                    return cloud_chats
+            except Exception as e:
+                print(f"[WARN] Failed to list chats from cloud database: {e}")
+
+        # 2. Local JSON Storage fallback
         chats = []
         if not self.storage_dir.exists():
             return chats
@@ -88,6 +115,9 @@ class ChatHistoryManager:
 
     def archive_chat(self, chat_id: str) -> bool:
         """Mark a chat session as archived."""
+        if self.pg_db and self.pg_db.is_connected:
+            self.pg_db.set_chat_archived(chat_id, True)
+
         file_path = self.storage_dir / f"{chat_id}.json"
         if file_path.exists():
             try:
@@ -100,10 +130,13 @@ class ChatHistoryManager:
                 return True
             except Exception as e:
                 print(f"[ERROR] Failed to archive chat {chat_id}: {e}")
-        return False
+        return bool(self.pg_db and self.pg_db.is_connected)
 
     def unarchive_chat(self, chat_id: str) -> bool:
         """Restore an archived chat session back to active list."""
+        if self.pg_db and self.pg_db.is_connected:
+            self.pg_db.set_chat_archived(chat_id, False)
+
         file_path = self.storage_dir / f"{chat_id}.json"
         if file_path.exists():
             try:
@@ -116,10 +149,20 @@ class ChatHistoryManager:
                 return True
             except Exception as e:
                 print(f"[ERROR] Failed to unarchive chat {chat_id}: {e}")
-        return False
+        return bool(self.pg_db and self.pg_db.is_connected)
 
     def load_chat(self, chat_id: str) -> Optional[Dict[str, Any]]:
         """Load messages and metadata for a specific chat."""
+        # 1. Try cloud database first
+        if self.pg_db and self.pg_db.is_connected:
+            try:
+                cloud_data = self.pg_db.load_chat_session(chat_id)
+                if cloud_data:
+                    return cloud_data
+            except Exception as e:
+                print(f"[WARN] Failed to load chat from cloud database: {e}")
+
+        # 2. Local fallback
         file_path = self.storage_dir / f"{chat_id}.json"
         if not file_path.exists():
             return None
@@ -163,6 +206,14 @@ class ChatHistoryManager:
             if not title:
                 title = "New Conversation"
 
+        # 1. Sync to Cloud PostgreSQL / Supabase
+        if self.pg_db and self.pg_db.is_connected:
+            try:
+                self.pg_db.save_chat_session(chat_id, title, messages, is_archived=existing_data.get("is_archived", False))
+            except Exception as e_pg_save:
+                print(f"[WARN] Failed to mirror chat to cloud database: {e_pg_save}")
+
+        # 2. Sync to local JSON
         now = time.time()
         chat_payload = {
             "id": chat_id,
@@ -184,6 +235,9 @@ class ChatHistoryManager:
 
     def delete_chat(self, chat_id: str) -> bool:
         """Delete a saved chat history file."""
+        if self.pg_db and self.pg_db.is_connected:
+            self.pg_db.delete_chat_session(chat_id)
+
         file_path = self.storage_dir / f"{chat_id}.json"
         if file_path.exists():
             try:
@@ -191,4 +245,4 @@ class ChatHistoryManager:
                 return True
             except Exception as e:
                 print(f"[ERROR] Failed to delete chat {chat_id}: {e}")
-        return False
+        return bool(self.pg_db and self.pg_db.is_connected)
