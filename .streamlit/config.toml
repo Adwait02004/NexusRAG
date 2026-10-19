@@ -1,5 +1,4 @@
 [server]
-port = 8500
 fileWatcherType = "none"
 folderWatchBlacklist = ["**/site-packages/**", "**/.venv/**"]
 headless = true
