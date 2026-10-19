@@ -20,6 +20,19 @@ if str(SRC_DIR) not in sys.path:
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
+# Bridge Streamlit Cloud secrets & .env into os.environ
+try:
+    import os
+    from dotenv import load_dotenv
+    load_dotenv(PROJECT_DIR / ".env")
+    load_dotenv()
+    if hasattr(st, "secrets"):
+        for k, v in st.secrets.items():
+            if isinstance(v, (str, int, float, bool)) and k not in os.environ:
+                os.environ[k] = str(v)
+except Exception:
+    pass
+
 from rag.search import RAGSearch, AVAILABLE_MODELS, DEFAULT_GROQ_MODEL
 from rag.url_ingester import URLIngester
 from rag.chat_history import ChatHistoryManager
