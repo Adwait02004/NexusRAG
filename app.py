@@ -7,7 +7,19 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent
 venv_python = PROJECT_DIR / ".venv" / "Scripts" / "python.exe"
 
-# Automatically activate / re-launch with project .venv if executed from global python
+# Check if running inside Streamlit runtime (e.g. Streamlit Cloud running 'streamlit run app.py')
+try:
+    from streamlit.runtime.scriptrunner import get_script_run_ctx
+    if get_script_run_ctx() is not None:
+        import runpy
+        import streamlit as st
+        _studio_path = PROJECT_DIR / "src" / "rag" / "streamlit_app.py"
+        runpy.run_path(str(_studio_path), run_name="__main__")
+        st.stop()
+except Exception:
+    pass
+
+# Automatically activate / re-launch with project .venv if executed from global python in terminal
 if venv_python.exists():
     try:
         current_exe = Path(sys.executable).resolve()

@@ -12,8 +12,16 @@ import urllib.parse
 from pathlib import Path
 import streamlit as st
 
-# Setup system path
-PROJECT_DIR = Path(__file__).resolve().parents[2]
+# Setup system path safely
+_curr_path = Path(__file__).resolve()
+PROJECT_DIR = None
+for _p in [_curr_path.parent, *_curr_path.parents]:
+    if (_p / "src" / "rag").exists() or (_p / "pyproject.toml").exists() or (_p / "requirements.txt").exists():
+        PROJECT_DIR = _p
+        break
+if PROJECT_DIR is None:
+    PROJECT_DIR = _curr_path.parent
+
 SRC_DIR = PROJECT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
