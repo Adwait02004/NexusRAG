@@ -35,6 +35,24 @@ class ChatHistoryManager:
                     self.pg_db = cand
             except Exception:
                 pass
+
+        # Auto-sync existing local chats to cloud database so both sides see them
+        if self.pg_db and self.pg_db.is_connected:
+            try:
+                cloud_chats = self.pg_db.list_chat_sessions(include_archived=True)
+                cloud_ids = {c["id"] for c in cloud_chats}
+                for file_path in self.storage_dir.glob("*.json"):
+                    if file_path.stem not in cloud_ids:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            c_data = json.load(f)
+                        self.pg_db.save_chat_session(
+                            c_data.get("id", file_path.stem),
+                            c_data.get("title", "Saved Conversation"),
+                            c_data.get("messages", []),
+                            c_data.get("is_archived", False)
+                        )
+            except Exception as e_c_sync:
+                print(f"[WARN] Failed to auto-sync local chats to Supabase: {e_c_sync}")
         
         # Ensure .gitkeep exists
         gitkeep = self.storage_dir / ".gitkeep"

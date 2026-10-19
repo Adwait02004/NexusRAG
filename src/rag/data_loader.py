@@ -206,8 +206,8 @@ def load_all_documents(data_dir: str | Path) -> List[Document]:
 
     for file_path in data_path.rglob("*"):
         if file_path.is_file() and file_path.suffix.lower() in supported_exts:
-            # Skip hidden files or database files
-            if file_path.name.startswith(".") or "vector_store" in str(file_path):
+            # Skip hidden files, database files, or chat histories
+            if file_path.name.startswith(".") or "vector_store" in str(file_path) or "chats" in file_path.parts or file_path.suffix.lower() == ".db":
                 continue
             try:
                 loaded = load_single_document(file_path)

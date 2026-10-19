@@ -125,11 +125,45 @@ class RAGSearch:
             print(f"[INFO] SQLite auto-sync notice: {e_sql_sync}")
 
         # Initialize PostgreSQL Vector Database connection only if configured (avoids connection timeout delay)
-        has_pg_config = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("ENABLE_POSTGRES") == "true")
+        has_pg_config = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_HOST") or os.getenv("ENABLE_POSTGRES") == "true")
         if has_pg_config:
             try:
                 from rag.database import PostgresVectorDB
                 self.pg_db = PostgresVectorDB()
+                if not self.pg_db.is_connected:
+                    self.pg_db = None
+                else:
+                    # Auto-sync existing local indexed documents to Supabase if Supabase is empty
+                    try:
+                        existing_pg_docs = self.pg_db.list_documents()
+                        if not existing_pg_docs:
+                            raw_docs = load_all_documents(self.data_path)
+                            if raw_docs:
+                                print(f"[INFO] Auto-syncing {len(raw_docs)} documents to Supabase...")
+                                chunks = self.vectorstore.emb_pipe.chunk_documents(raw_docs)
+                            if chunks:
+                                embeddings = self.vectorstore.emb_pipe.embed_chunks(chunks)
+                                by_source = {}
+                                for chunk, emb in zip(chunks, embeddings):
+                                    src = chunk.metadata.get("source", "unknown")
+                                    if src not in by_source:
+                                        by_source[src] = {"chunks": [], "embeddings": []}
+                                    by_source[src]["chunks"].append(chunk)
+                                    by_source[src]["embeddings"].append(emb)
+
+                                for src, data in by_source.items():
+                                    p = Path(src)
+                                    raw_bytes = p.read_bytes() if p.exists() and p.is_file() else b""
+                                    self.pg_db.store_document(
+                                        filename=p.name or src,
+                                        file_type=p.suffix.lstrip(".").lower() or "txt",
+                                        raw_bytes=raw_bytes,
+                                        chunks=data["chunks"],
+                                        embeddings=data["embeddings"]
+                                    )
+                                print("[INFO] Supabase auto-sync completed successfully.")
+                    except Exception as e_pg_sync:
+                        print(f"[WARN] Failed to auto-sync documents to Supabase: {e_pg_sync}")
             except Exception as e_db:
                 print(f"[INFO] PostgreSQL client not initialized: {e_db}")
                 self.pg_db = None
