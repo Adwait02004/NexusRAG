@@ -10,7 +10,7 @@ class ChatHistoryManager:
     Manages persistent user chat sessions stored on disk as JSON files.
     Allows loading, updating, listing, and deleting conversations just like ChatGPT.
     """
-    def __init__(self, storage_dir: Optional[Path | str] = None, pg_db: Optional[Any] = None):
+    def __init__(self, storage_dir: Optional[Path | str] = None, *args, pg_db: Optional[Any] = None, **kwargs):
         if storage_dir is None:
             # Default to data/chats under project root safely
             _curr = Path(__file__).resolve()
@@ -24,7 +24,7 @@ class ChatHistoryManager:
         
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        self.pg_db = pg_db
+        self.pg_db = pg_db or kwargs.get("pg_db") or (args[0] if args else None)
 
         # Auto-connect to PostgreSQL / Supabase if environment variables exist
         if self.pg_db is None and (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_URL")):
