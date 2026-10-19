@@ -1,27 +1,37 @@
 [project]
-name = "rag"
+name = "nexusrag"
 version = "0.1.0"
-description = "Add your description here"
+description = "NexusRAG Studio - Enterprise AI & Hybrid Retrieval Platform"
 readme = "README.md"
 authors = [
     { name = "Adwait02004", email = "sahasrabudheadwaitr@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.11,<3.13"
 dependencies = [
+    "streamlit>=1.35.0",
+    "langchain>=1.4.0",
+    "langchain-core>=1.6.0",
+    "langchain-community>=0.4.0",
+    "langchain-groq>=1.1.0",
+    "sentence-transformers>=6.0.0",
+    "faiss-cpu>=1.10.0",
+    "rank-bm25>=0.2.2",
+    "pypdf>=6.0.0",
+    "pymupdf>=1.28.0",
+    "python-dotenv>=1.2.0",
+    "beautifulsoup4>=4.12.0",
+    "duckduckgo-search>=8.0.0",
+    "requests>=2.31.0",
+    "docx2txt>=0.9.0",
+    "python-docx>=1.2.0",
+    "openpyxl>=3.1.0",
+    "python-pptx>=1.0.0",
+    "psycopg2-binary>=2.9.9",
+    "pgvector>=0.5.0",
+    "sqlalchemy>=2.0.0",
     "ipykernel>=7.4.0",
-    "langchain>=1.4.3",
-    "langchain-community>=0.4.2",
-    "langchain-core>=1.6.7",
-    "pymupdf>=1.28.2",
-    "pypdf>=6.19.0",
 ]
 
-[project.scripts]
-rag = "rag:main"
-
-[tool.uv]
-link-mode = "copy"
-
 [build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
-build-backend = "uv_build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
