@@ -3265,17 +3265,32 @@ def format_latex_formulas(text: str) -> str:
 
     text = re.sub(r'(?<!\\)\(\s*([^\(\)\n]*?' + LATEX_MATH_COMMANDS + r'[^\(\)\n]*?)\s*\)', replace_paren_math, text)
 
-    # 7. Normalize standalone lines that are pure LaTeX expressions:
+    # 7. Match and wrap any unescaped LaTeX math formulas containing equations, \\text{...}, relations, or math commands
+    # e.g. \text{addr}(A[i]) = B + i \times s or A \times B = C
+    def replace_unwrapped_formula(m):
+        expr = m.group(0).strip()
+        trailing = ""
+        while expr and expr[-1] in ".,;:":
+            trailing = expr[-1] + trailing
+            expr = expr[:-1].strip()
+        if not expr:
+            return m.group(0)
+        return f"${expr}${trailing}"
+
+    formula_pattern = r'(?:\\(?:text|mathrm|mathbf|mathbb|frac|sqrt)\{[^}]+\}|\\(?:[a-zA-Z]+))(?:\([^)]*\)|\[[^\]]*\]|[\s\w+*/^_{}\-=\\])*?(?:=|<|>|\+|-|\\times|\\cdot|\\approx|\\neq|\\leq|\\geq)(?:[\s\w+*/^_{}\-=\\]|\\(?:text|mathrm|mathbf|mathbb|frac|sqrt)\{[^}]+\}|\\[a-zA-Z]+)+'
+    text = re.sub(formula_pattern, replace_unwrapped_formula, text)
+
+    # 8. Normalize standalone lines that are pure LaTeX expressions:
     def replace_standalone_line(m):
         line = m.group(1).strip()
-        words = [w for w in re.findall(r'[a-zA-Z]{4,}', line) if not re.match(r'^(sin|cos|tan|csc|sec|cot|frac|dfrac|tfrac|sqrt|theta|alpha|beta|gamma|delta|epsilon|sigma|omega|approx|times|qquad|quad)$', w, re.I)]
-        if re.search(LATEX_MATH_COMMANDS, line) and len(words) <= 1:
+        words = [w for w in re.findall(r'[a-zA-Z]{4,}', line) if not re.match(r'^(sin|cos|tan|csc|sec|cot|frac|dfrac|tfrac|sqrt|theta|alpha|beta|gamma|delta|epsilon|sigma|omega|approx|times|qquad|quad|addr|text|base)$', w, re.I)]
+        if re.search(LATEX_MATH_COMMANDS, line) and len(words) <= 2:
             return f"${line}$"
         return m.group(0)
 
-    text = re.sub(r'(?m)^\s*(\\(?:sin|cos|tan|csc|sec|cot|frac|dfrac|tfrac|sqrt|sum|prod|int|lim|theta|alpha|beta|gamma|delta)[^\n]+)$', replace_standalone_line, text)
+    text = re.sub(r'(?m)^\s*(\\+[a-zA-Z]+[^\n]+)$', replace_standalone_line, text)
 
-    # 8. Unmask code and math blocks
+    # 9. Unmask code and math blocks
     for idx, block in enumerate(masked_blocks):
         text = text.replace(f"__MATH_OR_CODE_BLOCK_{idx}__", block)
 

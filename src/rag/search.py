@@ -546,12 +546,13 @@ class RAGSearch:
 
         math_instructions = (
             "5. MATHEMATICAL FORMULAS & EQUATIONS (MANDATORY):\n"
-            "   - When presenting mathematical formulas, equations, trigonometry identities, or mathematical symbols, ALWAYS format them as proper LaTeX enclosed in dollar signs so they render cleanly as visual formulas.\n"
-            "   - Use single dollar signs for inline math: e.g. `$x = \\cos\\theta$`, `$\\sin^2\\theta + \\cos^2\\theta = 1$`.\n"
+            "   - When presenting mathematical formulas, equations, address calculations, trigonometry identities, or mathematical symbols, ALWAYS format them as proper LaTeX enclosed in dollar signs so they render cleanly as visual formulas.\n"
+            "   - Use single dollar signs for inline math: e.g. `$x = \\cos\\theta$`, `$\\text{addr}(A[i]) = B + i \\times s$`, `$\\sin^2\\theta + \\cos^2\\theta = 1$`.\n"
             "   - Use double dollar signs for standalone / block equations:\n"
             "     $$\n"
-            "     \\tan(\\alpha \\pm \\beta) = \\frac{\\tan\\alpha \\pm \\tan\\beta}{1 \\mp \\tan\\alpha\\tan\\beta}\n"
+            "     \\text{addr}(A[i]) = B + i \\times s\n"
             "     $$\n"
+            "   - NEVER output naked/raw LaTeX commands without dollar signs (e.g. NEVER write '\\text{addr}(A[i]) = B + i \\times s' or '\\times' nakedly). ALWAYS wrap every equation and math formula in dollar signs ($...$ or $$...$$).\n"
             "   - NEVER output raw bracketed formulas like '[ \\sin... ]' or parentheses like '(\\displaystyle ...)' or '\\( ... \\)' without dollar signs.\n"
         )
 
