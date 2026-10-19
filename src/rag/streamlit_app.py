@@ -3205,9 +3205,34 @@ LATEX_MATH_COMMANDS = (
     r'infty|partial|nabla|hbar|ell|'
     r'quad|qquad|mathbf|mathit|mathrm|mathbb|mathcal|text|'
     r'begin|end|matrix|pmatrix|bmatrix|vmatrix|Vmatrix|'
+    r'bigl|bigr|Bigl|Bigr|biggl|biggr|Biggl|Biggr|left|right|'
     r'log|ln|lg|exp|det|dim|ker|deg|gcd)'
     r'(?:[^a-zA-Z]|$)'
 )
+
+
+def is_pure_math_expression(expr: str) -> bool:
+    """Check if an expression is a pure mathematical formula without prose text."""
+    s = expr.strip()
+    if not s:
+        return False
+    starts_like_formula = bool(re.match(r'^(?:\\+[a-zA-Z]+|[a-zA-Z][a-zA-Z0-9_]*(?:\[[^\]]+\]|\([^\)]+\))?\s*=)', s))
+    has_latex_cmd = bool(re.search(LATEX_MATH_COMMANDS, s))
+    has_relation_or_op = bool(re.search(r'[=<>+\-*/^_]|\\times|\\cdot|\\approx|\\neq|\\leq|\\geq', s))
+    if not (starts_like_formula and has_latex_cmd and has_relation_or_op):
+        return False
+
+    words = re.findall(r'[a-zA-Z]{3,}', s)
+    non_math_words = [
+        w for w in words
+        if not re.match(
+            r'^(text|addr|base|size|row|col|sin|cos|tan|csc|sec|cot|frac|dfrac|tfrac|sqrt|cbrt|'
+            r'theta|alpha|beta|gamma|delta|epsilon|sigma|omega|times|cdot|approx|neq|'
+            r'quad|qquad|bigl|bigr|Bigl|Bigr|biggl|biggr|left|right|math|array|matrix)$',
+            w, re.I
+        )
+    ]
+    return len(non_math_words) <= 1
 
 
 def format_latex_formulas(text: str) -> str:
@@ -3218,11 +3243,11 @@ def format_latex_formulas(text: str) -> str:
     # Remove \displaystyle which is redundant inside math mode and causes syntax clutter
     text = re.sub(r'\\displaystyle\s*', '', text)
 
-    # 1. Normalize LaTeX block delimiters \[ ... \] -> $ ... $ (collapsing internal linebreaks to single spaces)
+    # 1. Normalize LaTeX block delimiters \[ ... \] -> $$ ... $$
     def replace_block_math(m):
         inner = m.group(1).strip()
         inner_clean = ' '.join(inner.split())
-        return f"${inner_clean}$"
+        return f"\n\n$${inner_clean}$$\n\n"
 
     text = re.sub(r'\\\[([\s\S]*?)\\\]', replace_block_math, text)
 
@@ -3234,11 +3259,7 @@ def format_latex_formulas(text: str) -> str:
 
     text = re.sub(r'\\\(([\s\S]*?)\\\)', replace_inline_math, text)
 
-    # 3. Clean up bullet points followed immediately by math without colon:
-    text = re.sub(r'(?m)^(\s*[-•*]\s*\*\*[^*]+\*\*)\s*\n+\s*(\$)', r'\1: \2', text)
-    text = re.sub(r'(?m)^(\s*[-•*]\s*\*\*[^*]+\*\*)\s+(?!\:\s*)(\$)', r'\1: \2', text)
-
-    # 4. Normalize bracketed formulas like [ \sin^{2}\theta + \cos^{2}\theta = 1 ] -> $ ... $
+    # 3. Normalize bracketed formulas like [ \sin^{2}\theta + \cos^{2}\theta = 1 ] -> $ ... $
     def replace_bracket_math(m):
         content = m.group(1).strip()
         if re.search(LATEX_MATH_COMMANDS, content):
@@ -3249,56 +3270,74 @@ def format_latex_formulas(text: str) -> str:
     # Negative lookahead (?!\s*[\(\[]) ensures we do NOT break markdown links [text](url) or [[wiki]]
     text = re.sub(r'\[\s*([^\]\n]+?)\s*\](?!\s*[\(\[])', replace_bracket_math, text)
 
-    # 5. Mask existing math ($...$ and $$...$$) and code blocks before processing standalone elements
+    # 4. Clean up bullet points followed immediately by math without colon:
+    text = re.sub(r'(?m)^(\s*[-•*]\s*\*\*[^*]+\*\*)\s*\n+\s*(\${1,2})', r'\1: \2', text)
+    text = re.sub(r'(?m)^(\s*[-•*]\s*\*\*[^*]+\*\*)\s+(?!\:\s*)(\${1,2})', r'\1: \2', text)
+
+    # 5. Check for standalone lines or bullet items that are pure LaTeX formulas
+    # e.g. \text{addr}(A[i][j]) = B + \bigl(i \times n + j\bigr) \times s
+    lines = text.split('\n')
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith(('$', '#', '```', '|', '>')):
+            new_lines.append(line)
+            continue
+
+        # Check if line is a bullet item with a formula
+        bullet_match = re.match(r'^(\s*[-•*]\s*(?:\*\*[^*]+\*\*:\s*|\*[^*]+\*:\s*|[^:\n]+:\s*)?)(.+)$', line)
+        if bullet_match and stripped.startswith(('-', '*', '•')):
+            prefix = bullet_match.group(1)
+            formula_part = bullet_match.group(2).strip()
+            # If not already wrapped in $
+            if not formula_part.startswith('$') and is_pure_math_expression(formula_part):
+                trailing = ""
+                while formula_part and formula_part[-1] in ".,;:":
+                    trailing = formula_part[-1] + trailing
+                    formula_part = formula_part[:-1].strip()
+                new_lines.append(f"{prefix}${formula_part}${trailing}")
+                continue
+
+        # Standalone equation line (not bullet)
+        if not stripped.startswith(('-', '*', '•')) and is_pure_math_expression(stripped):
+            trailing = ""
+            while stripped and stripped[-1] in ".,;:":
+                trailing = stripped[-1] + trailing
+                stripped = stripped[:-1].strip()
+            new_lines.append(f"$${stripped}$${trailing}")
+            continue
+
+        new_lines.append(line)
+
+    text = '\n'.join(new_lines)
+
+    # 6. Normalize parenthesized math like (provided (\cos\theta \neq 0)) -> (\cos\theta \neq 0)
+    # Notice: (?<![a-zA-Z\\]) ensures we DO NOT match if preceded by letters (e.g. \bigl(, \bigr(, \left(, func() )
+    def replace_paren_math(m):
+        content = m.group(1).strip()
+        words = [w for w in re.findall(r'[a-zA-Z]{3,}', content) if not re.match(r'^(sin|cos|tan|csc|sec|cot|frac|sqrt|theta|alpha|beta|gamma|delta|sigma|neq|approx|quad|qquad|bigl|bigr|Bigl|Bigr)$', w, re.I)]
+        if re.search(LATEX_MATH_COMMANDS, content) and len(words) == 0:
+            return f"(${content}$)"
+        return m.group(0)
+
+    text = re.sub(r'(?<![a-zA-Z\\])\(\s*([^\(\)\n]*?' + LATEX_MATH_COMMANDS + r'[^\(\)\n]*?)\s*\)', replace_paren_math, text)
+
+    # 7. Mask code blocks and ALL well-formed math ($$..$$ and $..$)
     masked_blocks = []
     def mask_element(m):
         idx = len(masked_blocks)
         masked_blocks.append(m.group(0))
         return f"__MATH_OR_CODE_BLOCK_{idx}__"
 
-    text = re.sub(r'```[\s\S]*?```|`[^`\n]*`|\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$', mask_element, text)
+    text = re.sub(r'```[\s\S]*?```|`[^`\n]*`|\$\$[\s\S]*?\$\$|\$(?!\s)[^\$\n]+?(?<!\s)\$', mask_element, text)
 
-    # 6. Normalize remaining parentheses with math like (provided (\cos\theta \neq 0)) or (\cos\theta \neq 0)
-    def replace_paren_math(m):
-        content = m.group(1).strip()
-        words = [w for w in re.findall(r'[a-zA-Z]{3,}', content) if not re.match(r'^(sin|cos|tan|csc|sec|cot|frac|sqrt|theta|alpha|beta|gamma|delta|sigma|neq|approx|quad|qquad)$', w, re.I)]
-        if re.search(LATEX_MATH_COMMANDS, content) and len(words) == 0:
-            return f"(${content}$)"
-        return m.group(0)
-
-    text = re.sub(r'(?<!\\)\(\s*([^\(\)\n]*?' + LATEX_MATH_COMMANDS + r'[^\(\)\n]*?)\s*\)', replace_paren_math, text)
-
-    # 7. Match and wrap any unescaped LaTeX math formulas containing equations, \\text{...}, relations, or math commands
-    # e.g. \text{addr}(A[i]) = B + i \times s or A \times B = C
-    def replace_unwrapped_formula(m):
-        expr = m.group(0).strip()
-        trailing = ""
-        while expr and expr[-1] in ".,;:":
-            trailing = expr[-1] + trailing
-            expr = expr[:-1].strip()
-        if not expr:
-            return m.group(0)
-        return f"${expr}${trailing}"
-
-    formula_pattern = r'(?:\\(?:text|mathrm|mathbf|mathbb|frac|sqrt)\{[^}]+\}|\\(?:[a-zA-Z]+))(?:\([^)]*\)|\[[^\]]*\]|[\s\w+*/^_{}\-=\\])*?(?:=|<|>|\+|-|\\times|\\cdot|\\approx|\\neq|\\leq|\\geq)(?:[\s\w+*/^_{}\-=\\]|\\(?:text|mathrm|mathbf|mathbb|frac|sqrt)\{[^}]+\}|\\[a-zA-Z]+)+'
-    text = re.sub(formula_pattern, replace_unwrapped_formula, text)
-
-    # 8. Normalize standalone lines that are pure LaTeX expressions:
-    def replace_standalone_line(m):
-        line = m.group(1).strip()
-        words = [w for w in re.findall(r'[a-zA-Z]{4,}', line) if not re.match(r'^(sin|cos|tan|csc|sec|cot|frac|dfrac|tfrac|sqrt|theta|alpha|beta|gamma|delta|epsilon|sigma|omega|approx|times|qquad|quad|addr|text|base)$', w, re.I)]
-        if re.search(LATEX_MATH_COMMANDS, line) and len(words) <= 2:
-            return f"${line}$"
-        return m.group(0)
-
-    text = re.sub(r'(?m)^\s*(\\+[a-zA-Z]+[^\n]+)$', replace_standalone_line, text)
-
-    # 9. Unmask code and math blocks
+    # 8. Unmask code and math blocks
     for idx, block in enumerate(masked_blocks):
         text = text.replace(f"__MATH_OR_CODE_BLOCK_{idx}__", block)
 
-    # Clean up empty math markers
-    text = re.sub(r'\$\s*\$', '', text)
+    # 9. Clean up truly empty math markers ($$ $$ or $ $)
+    text = re.sub(r'\$\$[ \t]*\$\$', '', text)
+    text = re.sub(r'(?<!\$)\$[ \t]+\$(?!\$)', '', text)
 
     return text
 
