@@ -7,10 +7,30 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent
 venv_python = PROJECT_DIR / ".venv" / "Scripts" / "python.exe"
 
-# Check if running inside Streamlit runtime (e.g. Streamlit Cloud running 'streamlit run app.py')
+# 1. Ensure UTF-8 encoding across Windows terminal and subprocesses
+os.environ["PYTHONUNBUFFERED"] = "1"
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
+
+# 2. Automatically re-launch with project .venv if executed from global python in terminal
+if venv_python.exists():
+    try:
+        current_exe = Path(sys.executable).resolve()
+        target_exe = venv_python.resolve()
+        if current_exe != target_exe:
+            env = os.environ.copy()
+            res = subprocess.run([str(target_exe), str(Path(__file__).resolve())] + sys.argv[1:], env=env)
+            sys.exit(res.returncode)
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except Exception:
+        pass
+
+# 3. Check if running inside Streamlit runtime (e.g. Streamlit Cloud running 'streamlit run app.py')
+# Use streamlit.runtime.exists() which is completely silent and produces zero warnings
 try:
-    from streamlit.runtime.scriptrunner import get_script_run_ctx
-    if get_script_run_ctx() is not None:
+    from streamlit.runtime import exists as _st_runtime_exists
+    if _st_runtime_exists():
         import runpy
         import streamlit as st
         _studio_path = PROJECT_DIR / "src" / "rag" / "streamlit_app.py"
@@ -18,19 +38,6 @@ try:
         st.stop()
 except Exception:
     pass
-
-# Automatically activate / re-launch with project .venv if executed from global python in terminal
-if venv_python.exists():
-    try:
-        current_exe = Path(sys.executable).resolve()
-        target_exe = venv_python.resolve()
-        if current_exe != target_exe:
-            res = subprocess.run([str(target_exe), str(Path(__file__).resolve())] + sys.argv[1:])
-            sys.exit(res.returncode)
-    except KeyboardInterrupt:
-        sys.exit(0)
-    except Exception:
-        pass
 
 # Add src to sys.path
 SRC_DIR = PROJECT_DIR / "src"
@@ -113,16 +120,25 @@ if __name__ == "__main__":
                 "run",
                 str(streamlit_script),
                 f"--server.port={args.port}",
+                "--server.address=localhost",
                 "--server.headless=false",
                 "--server.fileWatcherType=auto",
                 "--server.runOnSave=true",
                 "--browser.gatherUsageStats=false"
             ]
 
+            print("\n" + "=" * 58)
+            print("  ⚡ NexusRAG Studio is launching...")
+            print(f"  🌐 Local URL: http://localhost:{args.port}")
+            print("=" * 58 + "\n")
+
             import time
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+            env["PYTHONUTF8"] = "1"
             while True:
                 try:
-                    res = subprocess.run(streamlit_cmd)
+                    res = subprocess.run(streamlit_cmd, env=env)
                     if res.returncode == 0:
                         break
                     print("\n" + "="*58)
