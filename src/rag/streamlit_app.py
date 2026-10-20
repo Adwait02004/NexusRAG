@@ -2816,14 +2816,8 @@ try:
 except TypeError:
     chat_mgr = ChatHistoryManager(PROJECT_DIR / "data" / "chats")
 if "current_chat_id" not in st.session_state:
-    existing_chats = chat_mgr.list_chats()
-    if existing_chats:
-        st.session_state.current_chat_id = existing_chats[0]["id"]
-        loaded = chat_mgr.load_chat(st.session_state.current_chat_id)
-        st.session_state.messages = loaded.get("messages", []) if loaded else []
-    else:
-        st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
-        st.session_state.messages = []
+    st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
+    st.session_state.messages = []
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
