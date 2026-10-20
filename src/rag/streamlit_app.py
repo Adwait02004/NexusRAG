@@ -2818,9 +2818,13 @@ except TypeError:
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
     st.session_state.messages = []
+    st.session_state.staged_attachments = []
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "staged_attachments" not in st.session_state:
+    st.session_state.staged_attachments = []
 
 
 # ─── Action Handlers ─── #
@@ -3473,8 +3477,6 @@ for idx, msg in enumerate(st.session_state.messages):
             else:
                 # Render attached document chip card(s) on main UI matching Gemini style
                 msg_attachments = msg.get("attachments") or []
-                if not msg_attachments and idx == 0 and active_docs:
-                    msg_attachments = list(active_docs)
                 if msg_attachments:
                     doc_chips_html = []
                     for doc_name in msg_attachments:
@@ -3622,10 +3624,7 @@ for idx, msg in enumerate(st.session_state.messages):
 pending_query = st.session_state.pop("pending_prompt", None)
 
 if "staged_attachments" not in st.session_state:
-    if len(st.session_state.messages) == 0 and active_docs:
-        st.session_state.staged_attachments = list(active_docs)
-    else:
-        st.session_state.staged_attachments = []
+    st.session_state.staged_attachments = []
 
 with st.bottom:
     component_output = gemini_chat_input(
@@ -3665,8 +3664,6 @@ if component_output:
             submission_attachments = component_output.get("attached_docs", [])
             if not submission_attachments:
                 submission_attachments = list(st.session_state.get("staged_attachments", []))
-            if not submission_attachments and active_docs and len(st.session_state.messages) == 0:
-                submission_attachments = list(active_docs)
 
             st.session_state["current_submission_attachments"] = submission_attachments
             # Clear staged attachments so the input bar resets cleanly
@@ -3778,8 +3775,6 @@ if len(st.session_state.messages) == 0 and not active_query:
 
 if active_query:
     curr_attachments = st.session_state.pop("current_submission_attachments", []) or []
-    if not curr_attachments and active_docs and len(st.session_state.messages) == 0:
-        curr_attachments = list(active_docs)
 
     is_duplicate_last = (
         bool(st.session_state.messages) 
