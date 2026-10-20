@@ -21,6 +21,7 @@ class PostgresVectorDB:
     - Cryptographic SHA-256 deduplication
     - Graceful offline fallback to local FAISS
     """
+    _schema_initialized: bool = False
 
     def __init__(
         self,
@@ -84,7 +85,9 @@ class PostgresVectorDB:
                 conn.execute(text("SELECT 1"))
             self._connected = True
             logger.info(f"Connected to secure PostgreSQL vectorstore at {self.host}:{self.port}/{self.database}")
-            self.init_schema()
+            if not PostgresVectorDB._schema_initialized:
+                self.init_schema()
+                PostgresVectorDB._schema_initialized = True
         except Exception as e:
             self._connected = False
             self.engine = None
@@ -399,21 +402,20 @@ class PostgresVectorDB:
         from sqlalchemy import text
         try:
             with self.engine.connect() as conn:
-                query = "SELECT id, title, messages, is_archived, created_at, updated_at FROM chat_sessions"
+                query = "SELECT id, title, is_archived, created_at, updated_at, jsonb_array_length(messages) as message_count FROM chat_sessions"
                 if not include_archived:
                     query += " WHERE is_archived = FALSE"
                 query += " ORDER BY updated_at DESC;"
                 rows = conn.execute(text(query)).fetchall()
                 chats = []
                 for r in rows:
-                    msgs = r[2] if isinstance(r[2], list) else json.loads(r[2])
                     chats.append({
                         "id": r[0],
                         "title": r[1],
-                        "created_at": r[4].timestamp() if r[4] else 0,
-                        "updated_at": r[5].timestamp() if r[5] else 0,
-                        "message_count": len(msgs),
-                        "is_archived": bool(r[3])
+                        "created_at": r[3].timestamp() if r[3] else 0,
+                        "updated_at": r[4].timestamp() if r[4] else 0,
+                        "message_count": int(r[5]) if r[5] is not None else 0,
+                        "is_archived": bool(r[2])
                     })
                 return chats
         except Exception as e:

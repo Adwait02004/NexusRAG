@@ -2811,10 +2811,14 @@ def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrie
 
 
 # ─── Chat History Manager ─── #
-try:
-    chat_mgr = ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=getattr(rag, "pg_db", None))
-except TypeError:
-    chat_mgr = ChatHistoryManager(PROJECT_DIR / "data" / "chats")
+@st.cache_resource(show_spinner=False)
+def get_chat_manager(_pg_db=None):
+    try:
+        return ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=_pg_db)
+    except TypeError:
+        return ChatHistoryManager(PROJECT_DIR / "data" / "chats")
+
+chat_mgr = get_chat_manager(getattr(rag, "pg_db", None))
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
     st.session_state.messages = []
