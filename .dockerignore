@@ -1,0 +1,52 @@
+# Git and VCS
+.git
+.gitignore
+.github
+
+# Environment and sensitive secrets - CRITICAL SECURITY
+.env
+.env.*
+.env.local
+.env.production
+!.env.example
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing, logs, and temporary files
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+scratch/
+scratch_*
+*.tmp
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

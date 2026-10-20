@@ -7,19 +7,27 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies
+# Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
+# Install python dependencies:
+# Pre-install lightweight CPU PyTorch wheel (~180MB instead of ~1.2GB CUDA bloat)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
 COPY . .
+
+# Security hardening: Create unprivileged system user and drop root privileges
+RUN useradd -m -u 10001 -s /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
 
 # Expose Streamlit default port
 EXPOSE 8501
