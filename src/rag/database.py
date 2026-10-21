@@ -419,8 +419,8 @@ class PostgresVectorDB:
                 query = "SELECT id, title, messages, is_archived, created_at, updated_at, user_id FROM chat_sessions WHERE id = :id"
                 params = {"id": chat_id}
                 if user_id:
-                    query += " AND user_id = :user_id"
-                    params["user_id"] = user_id
+                    query += " AND (LOWER(user_id) = LOWER(:user_id) OR user_id = :user_id)"
+                    params["user_id"] = str(user_id).strip()
                 row = conn.execute(text(query), params).fetchone()
                 if row:
                     msgs = row[2] if isinstance(row[2], list) else json.loads(row[2])
@@ -449,8 +449,8 @@ class PostgresVectorDB:
                 if not include_archived:
                     query += " AND is_archived = FALSE"
                 if user_id:
-                    query += " AND user_id = :user_id"
-                    params["user_id"] = user_id
+                    query += " AND (LOWER(user_id) = LOWER(:user_id) OR user_id = :user_id)"
+                    params["user_id"] = str(user_id).strip()
                 query += " ORDER BY updated_at DESC;"
                 rows = conn.execute(text(query), params).fetchall()
                 chats = []

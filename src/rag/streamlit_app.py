@@ -3034,8 +3034,23 @@ NexusRAG Studio fuses your private documents (PDF, DOCX, CSV, Excel, TXT) with r
 
         st.stop()
     else:
-        current_user = dict(st.user)
-        current_user_id = current_user.get("email") or current_user.get("sub") or "default_user"
+        current_user = dict(st.user) if hasattr(st, "user") else {}
+        user_email = (
+            getattr(st.user, "email", None)
+            or current_user.get("email")
+            or current_user.get("email_address")
+            or current_user.get("preferred_username")
+            or ""
+        )
+        if user_email and "@" in str(user_email):
+            current_user_id = str(user_email).strip().lower()
+        else:
+            current_user_id = (
+                getattr(st.user, "sub", None)
+                or current_user.get("sub")
+                or current_user.get("id")
+                or "default_user"
+            )
 
 
 # ─── Chat History Manager ─── #
