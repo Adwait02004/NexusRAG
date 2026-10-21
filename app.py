@@ -26,63 +26,7 @@ if venv_python.exists():
     except Exception:
         pass
 
-def _ensure_streamlit_secrets():
-    """Synthesize .streamlit/secrets.toml from environment variables if running in Hugging Face Spaces or container."""
-    try:
-        secrets_path = PROJECT_DIR / ".streamlit" / "secrets.toml"
-        if secrets_path.exists() and secrets_path.stat().st_size > 50:
-            return
-        
-        client_id = os.getenv("CLERK_CLIENT_ID")
-        client_secret = os.getenv("CLERK_CLIENT_SECRET")
-        if not (client_id and client_secret):
-            return
-
-        metadata_url = os.getenv(
-            "CLERK_SERVER_METADATA_URL",
-            "https://advanced-porpoise-7274.clerk.accounts.dev/.well-known/openid-configuration",
-        )
-        cookie_secret = os.getenv(
-            "CLERK_COOKIE_SECRET",
-            os.getenv("STREAMLIT_AUTH_COOKIE_SECRET", "8a76145ec7740c84fd18912b8b52129564bd63c71a683a3b74cd808f2b17a5a8"),
-        )
-        redirect_uri = os.getenv("CLERK_REDIRECT_URI", "")
-
-        secrets_path.parent.mkdir(parents=True, exist_ok=True)
-        lines = [
-            "# Auto-generated from environment variables for Hugging Face Spaces / Cloud deployment",
-            "[auth]",
-            f'cookie_secret = "{cookie_secret}"',
-            f'client_id = "{client_id}"',
-            f'client_secret = "{client_secret}"',
-            f'server_metadata_url = "{metadata_url}"',
-        ]
-        if redirect_uri:
-            lines.append(f'redirect_uri = "{redirect_uri}"')
-        lines.extend([
-            "",
-            "[auth.client_kwargs]",
-            'scope = "openid profile email"',
-            'prompt = "login"',
-            "",
-            "[auth.clerk]",
-            f'client_id = "{client_id}"',
-            f'client_secret = "{client_secret}"',
-            f'server_metadata_url = "{metadata_url}"',
-            "",
-            "[auth.clerk.client_kwargs]",
-            'scope = "openid profile email"',
-            'prompt = "login"',
-            ""
-        ])
-        secrets_path.write_text("\n".join(lines), encoding="utf-8")
-        print("[INFO] Synthesized .streamlit/secrets.toml from environment variables.")
-    except Exception as exc:
-        print(f"[WARN] Could not synthesize .streamlit/secrets.toml: {exc}")
-
-_ensure_streamlit_secrets()
-
-# 3. Check if running inside Streamlit runtime (e.g. Hugging Face Spaces or Streamlit Cloud)
+# 3. Check if running inside Streamlit runtime (e.g. Streamlit Cloud running 'streamlit run app.py')
 # Use streamlit.runtime.exists() which is completely silent and produces zero warnings
 try:
     from streamlit.runtime import exists as _st_runtime_exists
