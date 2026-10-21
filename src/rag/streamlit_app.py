@@ -2981,7 +2981,7 @@ Welcome back - pick up where you left off.
         with st.container(border=True, key="clerk_card_wrapper"):
             st.markdown("""
 <div style="text-align:center;margin-bottom:20px;">
-<h2 style="font-size:1.65rem;font-weight:800;color:#111827;letter-spacing:-0.03em;margin:0 0 6px 0;">Sign in to Skilotech</h2>
+<h2 style="font-size:1.65rem;font-weight:800;color:#111827;letter-spacing:-0.03em;margin:0 0 6px 0;">Sign in to NexusRAG Studio</h2>
 <p style="font-size:0.92rem;color:#6b7280;margin:0;font-weight:400;">Welcome back! Please sign in to continue</p>
 </div>
 """, unsafe_allow_html=True)
