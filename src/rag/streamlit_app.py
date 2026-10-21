@@ -2832,17 +2832,22 @@ current_user = None
 current_user_id = "default_user"
 if is_auth_configured and hasattr(st, "user"):
     if not st.user.is_logged_in:
-        # Full-screen focus styling for the authentication portal matching the Clerk design
+        # Full-screen focus styling matching NexusRAG Studio's Obsidian Titanium & Nebula Aura design
         auth_portal_css = """
 <style>
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
 header[data-testid="stHeader"] { background: transparent !important; }
 
-/* Light dot-grid canvas matching the design */
+/* Obsidian Titanium Canvas with Nebula Aura */
 .stApp {
-    background-color: #fafbfc !important;
-    background-image: radial-gradient(#d1d5db 1.2px, transparent 1.2px) !important;
-    background-size: 24px 24px !important;
+    background-color: #0b0d14 !important;
+    background-image:
+        radial-gradient(ellipse 90% 60% at 10% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 90% 100%, rgba(139, 92, 246, 0.09) 0%, transparent 60%),
+        radial-gradient(circle at 50% 30%, rgba(6, 182, 212, 0.04) 0%, transparent 70%),
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) !important;
+    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px !important;
+    background-attachment: fixed !important;
 }
 
 .main .block-container {
@@ -2852,21 +2857,24 @@ header[data-testid="stHeader"] { background: transparent !important; }
     margin: 0 auto !important;
 }
 
-/* Card Container */
+/* Card Container — Obsidian Glass with Subtle Violet Rim */
 div[class*="st-key-clerk_card_wrapper"],
 div[data-testid="stVerticalBlockBorderWrapper"]:has(div[class*="st-key-clerk_card_wrapper"]) {
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    border-radius: 22px !important;
+    background: rgba(19, 22, 34, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 1px solid rgba(139, 92, 246, 0.4) !important;
+    border-radius: 24px !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
     padding: 30px 28px 28px 28px !important;
-    box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 24px 70px -15px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(99, 102, 241, 0.22) !important;
 }
 
-/* Continue with Google Button */
+/* Continue with Google Button — Crisp White Pill with 4-Color Icon */
 div[class*="st-key-btn_clerk_auth_login"] button {
     background: #ffffff !important;
     color: #111827 !important;
-    border: 1px solid #e5e7eb !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
     border-radius: 10px !important;
     height: 44px !important;
     min-height: 44px !important;
@@ -2877,16 +2885,16 @@ div[class*="st-key-btn_clerk_auth_login"] button {
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    box-shadow: none !important;
-    transition: all 0.15s ease !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
     cursor: pointer !important;
 }
 
 div[class*="st-key-btn_clerk_auth_login"] button:hover {
-    background: #f9fafb !important;
-    border-color: #d1d5db !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
-    transform: none !important;
+    background: #f8fafc !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* Official Google "G" 4-color Logo permanently visible */
@@ -2917,32 +2925,33 @@ div[class*="st-key-btn_clerk_auth_login"] button p {
 
 /* Email Input Field & Label */
 div[class*="st-key-clerk_email_input"] label p {
-    color: #111827 !important;
+    color: #e2e8f0 !important;
     font-size: 0.88rem !important;
-    font-weight: 700 !important;
-    margin-bottom: 4px !important;
+    font-weight: 600 !important;
+    margin-bottom: 5px !important;
 }
 div[class*="st-key-clerk_email_input"] input {
-    background: #ffffff !important;
-    color: #111827 !important;
-    border: 1px solid #e5e7eb !important;
+    background: #0f111a !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 10px !important;
     height: 44px !important;
     padding: 0 14px !important;
     font-size: 0.92rem !important;
     box-shadow: none !important;
+    transition: all 0.15s ease !important;
 }
 div[class*="st-key-clerk_email_input"] input::placeholder {
-    color: #9ca3af !important;
+    color: #64748b !important;
 }
 div[class*="st-key-clerk_email_input"] input:focus {
-    border-color: #111827 !important;
-    box-shadow: 0 0 0 1px #111827 !important;
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 1px #6366f1, 0 0 16px rgba(99, 102, 241, 0.3) !important;
 }
 
-/* Continue ▸ Dark Button */
+/* Continue ▸ Electric Violet Button */
 div[class*="st-key-btn_clerk_email_continue"] button {
-    background: #18181b !important;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 10px !important;
@@ -2953,14 +2962,14 @@ div[class*="st-key-btn_clerk_email_continue"] button {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
-    transition: background 0.15s ease !important;
+    box-shadow: 0 4px 18px rgba(79, 70, 229, 0.45) !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
     cursor: pointer !important;
 }
 div[class*="st-key-btn_clerk_email_continue"] button:hover {
-    background: #27272a !important;
-    color: #ffffff !important;
-    transform: none !important;
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6d28d9 100%) !important;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.65) !important;
+    transform: translateY(-1px) !important;
 }
 div[class*="st-key-btn_clerk_email_continue"] button p {
     color: #ffffff !important;
@@ -2973,7 +2982,7 @@ div[class*="st-key-btn_clerk_email_continue"] button p {
         st.markdown(auth_portal_css, unsafe_allow_html=True)
 
         st.markdown("""
-<p style="text-align:center;font-size:0.95rem;color:#64748b;margin:0 0 18px 0;font-weight:400;">
+<p style="text-align:center;font-size:0.95rem;color:#94a3b8;margin:0 0 18px 0;font-weight:400;">
 Welcome back - pick up where you left off.
 </p>
 """, unsafe_allow_html=True)
@@ -2981,8 +2990,13 @@ Welcome back - pick up where you left off.
         with st.container(border=True, key="clerk_card_wrapper"):
             st.markdown("""
 <div style="text-align:center;margin-bottom:20px;">
-<h2 style="font-size:1.65rem;font-weight:800;color:#111827;letter-spacing:-0.03em;margin:0 0 6px 0;">Sign in to NexusRAG Studio</h2>
-<p style="font-size:0.92rem;color:#6b7280;margin:0;font-weight:400;">Welcome back! Please sign in to continue</p>
+<div style="display:flex;justify-content:center;margin-bottom:12px;">
+<div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#d946ef 100%);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(124,58,237,0.45);border:1px solid rgba(255,255,255,0.25);">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
+</div>
+</div>
+<h2 style="font-size:1.6rem;font-weight:800;color:#f8fafc;letter-spacing:-0.03em;margin:0 0 6px 0;">Sign in to NexusRAG Studio</h2>
+<p style="font-size:0.92rem;color:#94a3b8;margin:0;font-weight:400;">Welcome back! Please sign in to continue</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -2997,9 +3011,9 @@ Welcome back - pick up where you left off.
 
             st.markdown("""
 <div style="display:flex;align-items:center;margin:18px 0 16px 0;">
-<div style="flex:1;height:1px;background:#e5e7eb;"></div>
-<span style="padding:0 12px;font-size:0.75rem;font-weight:600;color:#9ca3af;letter-spacing:0.06em;">OR</span>
-<div style="flex:1;height:1px;background:#e5e7eb;"></div>
+<div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
+<span style="padding:0 12px;font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.06em;">OR</span>
+<div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -3015,8 +3029,8 @@ Welcome back - pick up where you left off.
                         st.error(f"Sign-in error: {err}")
 
         st.markdown("""
-<p style="text-align:center;font-size:0.88rem;color:#6b7280;margin-top:20px;">
-Don't have an account? <strong style="color:#111827;">Sign up</strong>
+<p style="text-align:center;font-size:0.88rem;color:#94a3b8;margin-top:20px;">
+Don't have an account? <strong style="color:#818cf8;cursor:pointer;">Sign up</strong>
 </p>
 """, unsafe_allow_html=True)
         st.stop()
