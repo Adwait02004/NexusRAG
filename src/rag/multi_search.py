@@ -75,68 +75,114 @@ class OmniSearchEngine:
         return False
 
     @staticmethod
-    def is_pure_image_query(query: str) -> bool:
-        """Detect whether a query is asking purely for visuals/images/photos of an entity."""
+    def is_genai_image_query(query: str) -> bool:
+        """Detect whether a query specifically asks to generate/create/draw an AI image."""
         if not query:
             return False
         q = query.strip()
+        gen_pattern = (
+            r"\b(generate|create|draw|paint|render|make)\s+(?:an?\s+|one\s+|a\s+|some\s+)?(?:ai\s+)?(?:images?|pictures?|photos?|artwork|illustrations?|portraits?|art|visuals?)\b|"
+            r"^(?:please\s+)?(?:draw|paint|render)\s+[a-zA-Z0-9\s]+|"
+            r"\b(?:ai\s+generated|flux|sdxl|dall-e|midjourney|generative\s+ai|genai)\b"
+        )
+        return bool(re.search(gen_pattern, q, re.IGNORECASE))
+
+    @staticmethod
+    def is_scene_or_compositional_prompt(q: str) -> bool:
+        """Detect whether a query describes a composite scene, action, or creative concept requiring GenAI generation."""
+        if not q:
+            return False
+        pattern = (
+            r"\b(playing\s+with|on\s+a|in\s+a|with\s+|wearing|breathing|flying|running|eating|sitting|standing|"
+            r"holding|looking\s+at|surrounded\s+by|riding|floating|swimming|jumping|walking|driving|"
+            r"futuristic|cyberpunk|anime|digital\s+art|concept\s+art|neon|fantasy|mythical|space|extraterrestrial|"
+            r"photorealistic|hyperrealistic|cinematic|oil\s+painting|watercolor|sketch|drawing|illustration)\b|"
+            r"^(?:my|our)\s+(?:dog|cat|house|room|car|family|pet)\b"
+        )
+        return bool(re.search(pattern, q, re.IGNORECASE))
+
+    @staticmethod
+    def is_pure_image_query(query: str) -> bool:
+        """Detect whether a query is asking purely for visuals/images/photos/portraits of any entity or thing."""
+        if not query:
+            return False
+        q = query.strip()
+        # Direct GenAI verb check
+        gen_kw = bool(re.search(
+            r"\b(generate|create|draw|paint|render)\s+(?:an?\s+|one\s+|some\s+)?(?:ai\s+)?(?:images?|pictures?|photos?|artwork|art|visuals?)\b|"
+            r"^(?:please\s+)?(?:draw|paint|render)\s+",
+            q,
+            re.IGNORECASE
+        ))
+        if gen_kw:
+            return True
+
         concept_pattern = r"\b(explain|how\s+does|how\s+do|how\s+to|what\s+is|what\s+are|why\s+is|why\s+do|difference\s+between|compare|describe\s+how|write\s+a|algorithm|mechanism)\b"
         if re.search(concept_pattern, q, re.IGNORECASE):
             return False
             
-        has_img_kw = bool(re.search(r"\b(images?|pictures?|photos?|pics?|diagrams?|illustrations?|visuals?)\b", q, re.IGNORECASE))
+        has_img_kw = bool(re.search(r"\b(images?|pictures?|photos?|pics?|diagrams?|illustrations?|figures?|visuals?|portraits?|artwork)\b", q, re.IGNORECASE))
         if not has_img_kw:
             return False
 
-        # 1. Matches command + image: (give/show/get/find/fetch/display/send/provide) (me)? (the/some/a/all/few)? images? (of/for)? ...
-        p1 = r"^(?:please\s+)?(?:can\s+you\s+)?(?:show|display|give|get|find|fetch|provide|send)\s+(?:me\s+)?(?:the\s+|some\s+|a\s+|all\s+)?(?:few\s+)?(?:images?|pictures?|photos?|pics?|visuals?)\b"
-        if re.search(p1, q, re.IGNORECASE):
-            return True
+        # Any query with an image keyword that is not an explicit concept explanation is a pure image request!
+        return True
 
-        # 2. Matches 'images of X', 'photos of X', 'pictures of X'
-        p2 = r"^(?:the\s+|some\s+)?(?:images?|pictures?|photos?|pics?|visuals?)\s+(?:of|for|about|showing|depicting)\b"
-        if re.search(p2, q, re.IGNORECASE):
-            return True
-
-        # 3. Matches 'X images', 'X pictures', 'X photos' (short queries <= 7 words ending in image keyword)
-        p3 = r"^(?:show\s+(?:me\s+)?)?([a-zA-Z0-9\s\.\'-]+?)\s+(?:images?|pictures?|photos?|pics?|visuals?)$"
-        m3 = re.match(p3, q, re.IGNORECASE)
-        if m3:
-            words = q.split()
-            if len(words) <= 7:
-                return True
-
-        return False
+    @staticmethod
+    def generate_ai_image(prompt: str, width: int = 1024, height: int = 1024, model: str = "flux") -> Dict[str, str]:
+        """
+        Synthesize high-fidelity GenAI visual using Pollinations FLUX / SDXL inference.
+        Returns a dictionary with title, image_url, source_url, and caption.
+        """
+        clean_prompt = prompt.strip()
+        encoded = urllib.parse.quote(clean_prompt)
+        img_url = f"https://image.pollinations.ai/prompt/{encoded}?width={width}&height={height}&model={model}&nologo=true"
+        return {
+            "title": f"GenAI: {clean_prompt[:40]}",
+            "image_url": img_url,
+            "source_url": img_url,
+            "caption": "GenAI Synthesis • FLUX Neural Engine",
+            "is_genai": True
+        }
 
     @staticmethod
     def clean_entity_query(query: str) -> str:
-        """Strip conversational filler words to extract the core named entity or concept."""
+        """Strip conversational filler words, desire commands, and image tokens to extract the exact entity or thing."""
         if not query:
             return ""
         cleaned = query.strip()
         cleaned = re.sub(r"[\?\.\!]+$", "", cleaned).strip()
 
-        # Remove conversational prompt starters
+        # Multi-pass strip of conversational starters and desire prefixes
+        prefix_pattern = (
+            r"^(?:also\s+)?(?:please\s+)?"
+            r"(?:can\s+(?:i|we|you)\s+(?:see|have|get|show\s+me)\s+|could\s+you\s+(?:show|give|send)\s+|"
+            r"i\s+(?:want|need)\s+(?:to\s+see\s+)?|(?:i\s+)?need\s+|let\s+me\s+see\s+|tell\s+me\s+about|"
+            r"what\s+does\s+[a-zA-Z0-9\s]+look\s+like|search\s+(?:for)?\s+|"
+            r"(?:show|display|give|get|find|fetch|provide|send|generate|create|draw|produce|paint|render|see|view)\s+(?:me\s+)?|"
+            r"(?:only|just|simply)\s+)+"
+        )
+        for _ in range(3):
+            cleaned = re.sub(prefix_pattern, "", cleaned, flags=re.IGNORECASE).strip()
+
+        # Multi-pass strip of image prefixes and quantifiers (handles "only image of", "1 photo of", etc.)
+        img_prefix = (
+            r"^(?:the\s+|some\s+|a\s+|an\s+|one\s+|1\s+|single\s+|only\s+|just\s+|all\s+|any\s+|few\s+|several\s+|latest\s+|best\s+|hd\s+|hq\s+|4k\s+|high\s+resolution\s+|high\s+quality\s+)?"
+            r"(?:ai\s+)?"
+            r"(?:images?|pictures?|photos?|pics?|diagrams?|illustrations?|figures?|visuals?|portraits?|artwork)\s+"
+            r"(?:of|for|about|showing|depicting)?\s*"
+        )
+        for _ in range(3):
+            cleaned = re.sub(img_prefix, "", cleaned, flags=re.IGNORECASE).strip()
+
+        # Strip trailing image keywords (e.g. 'Virat Kohli image' -> 'Virat Kohli')
         cleaned = re.sub(
-            r"^(?:also\s+)?(?:please\s+)?(?:can\s+you\s+)?(?:could\s+you\s+)?(?:i\s+want\s+)?(?:let\s+me\s+know\s+about|tell\s+me\s+about|find\s+(?:out\s+)?about|what\s+do\s+you\s+know\s+about|who\s+(?:is|was|are|were)|what\s+(?:is|are|was|were)|explain|describe|give\s+(?:me\s+)?(?:information|details|info)\s+(?:on|about)|overview\s+of|search\s+(?:for)?)\s+",
+            r"\s+(?:images?|pictures?|photos?|pics?|diagrams?|illustrations?|figures?|visuals?|portraits?|artwork)$",
             "", cleaned, flags=re.IGNORECASE
         ).strip()
 
-        # Remove image request prefixes (e.g. 'give me the images of', 'show me pictures of', 'images of')
-        cleaned = re.sub(
-            r"^(?:show|display|give|get|find|fetch|provide|send)?\s*(?:me\s+)?(?:the\s+|some\s+|a\s+|all\s+)?(?:few\s+)?(?:images?|pictures?|photos?|pics?|diagrams?|illustrations?|figures?|visuals?)\s+(?:of|for|about|showing|depicting)?\s*",
-            "", cleaned, flags=re.IGNORECASE
-        ).strip()
-
-        # Remove image request suffixes (e.g. 'MS Dhoni images' -> 'MS Dhoni')
-        cleaned = re.sub(
-            r"\s+(?:images?|pictures?|photos?|pics?|diagrams?|illustrations?|figures?|visuals?)$",
-            "", cleaned, flags=re.IGNORECASE
-        ).strip()
-
-        # Remove leading action verbs (e.g. 'show me MS Dhoni' -> 'MS Dhoni')
-        cleaned = re.sub(r"^(?:show|display|give|get|find|fetch|provide|send)\s+(?:me\s+)?", "", cleaned, flags=re.IGNORECASE).strip()
-
+        # Strip leading prepositions, articles, or remnant qualifiers
+        cleaned = re.sub(r"^(?:of|for|about|an?|the|only|just|single)\s+", "", cleaned, flags=re.IGNORECASE).strip()
         return cleaned or query
 
     def search_wikipedia(self, query: str, limit: int = 2) -> List[Dict[str, Any]]:
@@ -277,6 +323,15 @@ class OmniSearchEngine:
 
         images: List[Dict[str, str]] = []
         cleaned_entity = self.clean_entity_query(query)
+
+        # 0. GenAI Synthesis for creative prompts, descriptive scenes, or explicit generation requests
+        is_genai = self.is_genai_image_query(query)
+        is_scene = self.is_scene_or_compositional_prompt(cleaned_entity)
+        if is_genai or is_scene:
+            genai_img = self.generate_ai_image(cleaned_entity)
+            images.append(genai_img)
+            if len(images) >= limit:
+                return images
 
         # 1. Local Image Matching (if images exist in data/images)
         if data_dir:
@@ -424,6 +479,15 @@ class OmniSearchEngine:
                                     break
                 except Exception as e_c:
                     print(f"[WARN] Wikimedia Commons image search error: {e_c}")
+
+        # 5. GenAI Integration: If specifically requested, synthesize with FLUX neural engine!
+        if self.is_genai_image_query(query):
+            genai_img = self.generate_ai_image(cleaned_entity)
+            images.insert(0, genai_img)
+        elif not images and cleaned_entity:
+            # Fallback: Synthesize with GenAI so the user always receives a visual!
+            genai_img = self.generate_ai_image(f"{cleaned_entity}, photorealistic, high quality, 8k")
+            images.append(genai_img)
 
         return images
 

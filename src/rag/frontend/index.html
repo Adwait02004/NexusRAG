@@ -45,9 +45,9 @@
         }
 
         .chat-capsule.focused {
-            border-color: #ff5722;
+            border-color: #6366f1;
             background: #1e2027;
-            box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.2), 0 12px 36px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25), 0 8px 24px rgba(0, 0, 0, 0.5);
         }
 
         /* ─── Uploaded Document Badges / Chips Row ─── */
@@ -86,7 +86,7 @@
 
         .doc-card:hover {
             transform: translateY(-2px);
-            border-color: rgba(255, 87, 34, 0.45);
+            border-color: rgba(99, 102, 241, 0.45);
         }
 
         .doc-card-type {
@@ -121,7 +121,7 @@
         }
 
         .doc-card-remove:hover {
-            background: #ff5722;
+            background: #ef4444;
             color: #fff;
         }
 
@@ -190,21 +190,19 @@
             height: 34px;
             min-width: 34px;
             border-radius: 50%;
-            color: #ff8a65;
+            color: #94a3b8;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.15s ease;
             user-select: none;
         }
 
         .plus-btn:hover {
-            background: linear-gradient(135deg, rgba(255, 87, 34, 0.35), rgba(244, 63, 94, 0.35));
-            border-color: rgba(255, 87, 34, 0.6);
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.4);
             color: #ffffff;
-            transform: scale(1.06);
-            box-shadow: 0 0 14px rgba(255, 87, 34, 0.35);
         }
 
         .plus-btn:active {
@@ -269,15 +267,16 @@
         }
 
         .send-btn.active {
-            background: linear-gradient(135deg, #ff5722 0%, #f43f5e 100%);
+            background: #4f46e5;
             color: #ffffff;
-            box-shadow: 0 4px 16px rgba(244, 63, 94, 0.45);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             cursor: pointer;
         }
 
         .send-btn.active:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
+            background: #4338ca;
+            transform: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         /* ─── Light Mode Overrides ─── */

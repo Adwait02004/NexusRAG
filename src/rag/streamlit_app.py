@@ -132,29 +132,29 @@ button[data-testid="stExpandSidebarButton"] {
     height: 38px !important;
     min-height: 38px !important;
     min-width: 38px !important;
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z'/></svg>"), linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
-    background-repeat: no-repeat, no-repeat !important;
-    background-position: center, center !important;
-    background-size: 20px 20px, cover !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-    border-radius: 11px !important;
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5), 0 0 12px rgba(124, 58, 237, 0.35) !important;
+    background: #4f46e5 !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 20px 20px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 9px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
     cursor: pointer !important;
     opacity: 1 !important;
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: background 0.15s ease !important;
     padding: 0 !important;
 }
 
 button[data-testid="stExpandSidebarButton"]:hover {
-    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6d28d9 100%) !important;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z'/></svg>"), linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6d28d9 100%) !important;
-    background-repeat: no-repeat, no-repeat !important;
-    background-position: center, center !important;
-    background-size: 21px 21px, cover !important;
-    transform: scale(1.08) !important;
-    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.7), 0 0 18px rgba(124, 58, 237, 0.5) !important;
-    border-color: rgba(255, 255, 255, 0.45) !important;
+    background: #4338ca !important;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 20px 20px !important;
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
 button[data-testid="stExpandSidebarButton"] svg,
@@ -223,13 +223,10 @@ div[data-testid="stSidebarCollapseButton"] {
     opacity: 1 !important;
 }
 
-/* ═══ APP BACKGROUND — Deep Obsidian Titanium with Nebula Aura ═══ */
+/* ═══ APP BACKGROUND ═══ */
 .stApp {
-    background-color: #0b0d14;
-    background-image:
-        radial-gradient(ellipse 90% 60% at 10% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 80% 60% at 90% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
-        radial-gradient(circle at 50% 30%, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+    background-color: #0d0f17;
+    background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 60%);
     background-attachment: fixed;
 }
 
@@ -926,96 +923,67 @@ div[data-testid="stSidebar"] div[data-testid="stExpander"] details[open] summary
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4.5rem 1rem 2.2rem 1rem;
+    padding: 4rem 1rem 2rem 1rem;
     text-align: center;
 }
 
 .welcome-icon {
-    width: 68px;
-    height: 68px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%);
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: #4f46e5;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow:
-        0 0 40px rgba(99, 102, 241, 0.4),
-        0 0 80px rgba(139, 92, 246, 0.2);
-    margin-bottom: 24px;
-    animation: float 4s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-7px); }
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
 }
 
 .welcome-hero h2 {
-    font-family: 'Outfit', sans-serif;
-    font-size: 2.3rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #ffffff 40%, #c7d2fe 75%, #818cf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 2.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    margin-bottom: 8px;
 }
 
 .welcome-hero p {
-    font-size: 0.96rem;
-    color: #9ca3af;
-    margin-bottom: 2.8rem;
+    font-size: 0.95rem;
+    color: #94a3b8;
+    margin-bottom: 2.5rem;
     max-width: 480px;
     line-height: 1.55;
 }
 
 /* ═══ SUGGESTION BUTTON CARDS ═══ */
-div[data-testid="stHorizontalBlock"] .stButton > button {
-    background: #12141e !important;
+div[class*="st-key-card_"] .stButton > button {
+    background: #141722 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 18px !important;
-    padding: 18px 22px !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
     text-align: left !important;
     height: auto !important;
-    min-height: 84px !important;
+    min-height: 80px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: center !important;
-    color: #f3f4f6 !important;
-    font-size: 0.9rem !important;
+    color: #f1f5f9 !important;
+    font-size: 0.88rem !important;
     font-weight: 600 !important;
     line-height: 1.45 !important;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
-    position: relative !important;
-    overflow: hidden !important;
+    transition: all 0.15s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
     margin-bottom: 12px !important;
 }
 
-div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_"]) .stButton > button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #4f46e5, #6366f1, #06b6d4);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-}
-
-div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_"]) .stButton > button:hover {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08)) !important;
-    border-color: rgba(99, 102, 241, 0.45) !important;
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 32px rgba(99, 102, 241, 0.22) !important;
+div[class*="st-key-card_"] .stButton > button:hover {
+    background: #1c202e !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
     color: #ffffff !important;
-}
-
-div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_"]) .stButton > button:hover::before {
-    opacity: 1 !important;
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* ═══ CHAT MESSAGES ═══ */
@@ -1024,8 +992,8 @@ div[data-testid="stChatMessage"] {
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    padding: 14px 0px !important;
-    margin-bottom: 14px !important;
+    padding: 12px 0px !important;
+    margin-bottom: 12px !important;
 }
 
 /* User Message — Standard Conversational Right Alignment */
@@ -1041,11 +1009,11 @@ div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"])
     max-width: 80% !important;
     width: fit-content !important;
     min-width: 175px !important;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(139, 92, 246, 0.14)) !important;
-    border: 1px solid rgba(99, 102, 241, 0.35) !important;
-    border-radius: 20px 20px 4px 20px !important;
-    padding: 14px 20px !important;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+    background: #1c202d !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border-radius: 14px 14px 2px 14px !important;
+    padding: 12px 18px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
     align-self: flex-end !important;
 }
 
@@ -2832,513 +2800,239 @@ current_user = None
 current_user_id = "default_user"
 if is_auth_configured and hasattr(st, "user"):
     if not st.user.is_logged_in:
-        if "auth_view" not in st.session_state:
-            st.session_state["auth_view"] = "landing"
-
-        if st.session_state["auth_view"] == "landing":
-            landing_css = """
+        landing_css = """
 <style>
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
 header[data-testid="stHeader"] { background: transparent !important; }
 
-/* Obsidian Titanium Canvas with Nebula Aura */
+/* Clean, modern dark canvas */
 .stApp {
-    background-color: #0b0d14 !important;
-    background-image:
-        radial-gradient(ellipse 90% 60% at 10% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
-        radial-gradient(ellipse 80% 60% at 90% 100%, rgba(139, 92, 246, 0.10) 0%, transparent 60%),
-        radial-gradient(circle at 50% 30%, rgba(6, 182, 212, 0.05) 0%, transparent 70%),
-        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) !important;
-    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px !important;
+    background-color: #0d0f17 !important;
+    background-image: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 60%) !important;
     background-attachment: fixed !important;
 }
 
 .main .block-container {
-    max-width: 1080px !important;
+    max-width: 1040px !important;
     padding-top: 1.5rem !important;
     padding-bottom: 5rem !important;
     margin: 0 auto !important;
 }
 
-/* Navbar Sign-in Button */
-div[class*="st-key-btn_nav_signin"] button {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-radius: 10px !important;
-    height: 38px !important;
-    padding: 0 16px !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-}
-div[class*="st-key-btn_nav_signin"] button:hover {
-    background: rgba(255, 255, 255, 0.16) !important;
-    border-color: rgba(99, 102, 241, 0.5) !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 16px rgba(99, 102, 241, 0.25) !important;
-}
-
-/* Primary CTA Button */
-div[class*="st-key-btn_hero_get_started"] button,
-div[class*="st-key-btn_footer_get_started"] button {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    height: 48px !important;
-    font-size: 1.02rem !important;
-    font-weight: 700 !important;
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-div[class*="st-key-btn_hero_get_started"] button:hover,
-div[class*="st-key-btn_footer_get_started"] button:hover {
-    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6d28d9 100%) !important;
-    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.65) !important;
-    transform: translateY(-2px) !important;
-}
-
-/* Hero Google Button */
-div[class*="st-key-btn_hero_google"] button {
-    background: #ffffff !important;
-    color: #111827 !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 12px !important;
-    height: 48px !important;
-    font-size: 0.98rem !important;
-    font-weight: 600 !important;
+/* Clean, standard Sign-In Button */
+div[class*="st-key-btn_nav_signin"] {
     display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+}
+div[class*="st-key-btn_nav_signin"] button,
+div[class*="st-key-btn_nav_signin"] .stButton > button,
+button[data-testid="baseButton-primary"],
+button[kind="primary"] {
+    background: #4f46e5 !important;
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 8px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    width: auto !important;
+    min-width: 100px !important;
+    padding: 0 16px !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 10px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
-    transition: all 0.2s ease !important;
-}
-div[class*="st-key-btn_hero_google"] button:hover {
-    background: #f8fafc !important;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45) !important;
-    transform: translateY(-2px) !important;
-}
-div[class*="st-key-btn_hero_google"] button::before {
-    content: "" !important;
-    display: inline-block !important;
-    width: 18px !important;
-    height: 18px !important;
-    min-width: 18px !important;
-    min-height: 18px !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important;
-    background-size: contain !important;
-    background-position: center !important;
-    opacity: 1 !important;
+    text-align: center !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
     margin: 0 !important;
-    flex: 0 0 auto !important;
 }
-div[class*="st-key-btn_hero_google"] button div[data-testid="stMarkdownContainer"] {
+div[class*="st-key-btn_nav_signin"] button *,
+button[data-testid="baseButton-primary"] *,
+button[kind="primary"] * {
+    color: #ffffff !important;
+}
+div[class*="st-key-btn_nav_signin"] button div[data-testid="stMarkdownContainer"],
+button[data-testid="baseButton-primary"] div[data-testid="stMarkdownContainer"],
+button[kind="primary"] div[data-testid="stMarkdownContainer"] {
     display: inline-flex !important;
     align-items: center !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
+    justify-content: center !important;
+    line-height: 1 !important;
     padding: 0 !important;
     margin: 0 !important;
 }
-div[class*="st-key-btn_hero_google"] button p {
-    color: #111827 !important;
-    font-size: 0.98rem !important;
+div[class*="st-key-btn_nav_signin"] button p,
+button[data-testid="baseButton-primary"] p,
+button[kind="primary"] p {
+    color: #ffffff !important;
+    font-size: 0.9rem !important;
     font-weight: 600 !important;
+    line-height: 1 !important;
     margin: 0 !important;
     padding: 0 !important;
-    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+div[class*="st-key-btn_nav_signin"] button:hover,
+button[data-testid="baseButton-primary"]:hover,
+button[kind="primary"]:hover {
+    background: #4338ca !important;
+    background-color: #4338ca !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+    transform: none !important;
+}
+div[class*="st-key-btn_nav_signin"] button::before {
+    display: none !important;
 }
 </style>
 """
-            st.markdown(landing_css, unsafe_allow_html=True)
+        st.markdown(landing_css, unsafe_allow_html=True)
 
-            # Top Navigation Bar
-            nav_col1, nav_col2 = st.columns([3, 1])
-            with nav_col1:
-                st.markdown("""
+        # Top Navigation Bar
+        nav_col1, nav_col2 = st.columns([5, 1])
+        with nav_col1:
+            st.markdown("""
 <div style="display:flex;align-items:center;gap:12px;padding:6px 0;">
-<div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed,#d946ef);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(124,58,237,0.4);">
+<div style="width:36px;height:36px;border-radius:10px;background:#4f46e5;display:inline-flex;align-items:center;justify-content:center;">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
 </div>
-<span style="font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;color:#ffffff;">NexusRAG <span style="font-weight:400;color:#c4b5fd;">Studio</span></span>
-<span style="background:rgba(99,102,241,0.15);border:1px solid rgba(139,92,246,0.3);color:#a5b4fc;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:9999px;">Enterprise v2.4</span>
+<span style="font-size:1.2rem;font-weight:700;letter-spacing:-0.01em;color:#ffffff;">NexusRAG <span style="font-weight:400;color:#94a3b8;">Studio</span></span>
+<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:6px;">Enterprise v2.4</span>
 </div>
 """, unsafe_allow_html=True)
-            with nav_col2:
-                if st.button("Sign In →", key="btn_nav_signin", use_container_width=True):
-                    st.session_state["auth_view"] = "signin"
-                    st.rerun()
+        with nav_col2:
+            if st.button("Sign In →", key="btn_nav_signin", type="primary"):
+                try:
+                    st.login("clerk")
+                except Exception:
+                    try:
+                        st.login()
+                    except Exception as err:
+                        st.error(f"Sign-in error: {err}")
 
-            # Hero Section
-            st.markdown("""
-<div style="text-align:center;padding:50px 0 24px 0;max-width:880px;margin:0 auto;">
-<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,0.12);border:1px solid rgba(139,92,246,0.28);border-radius:9999px;padding:6px 16px;margin-bottom:22px;">
-<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></span>
-<span style="color:#c4b5fd;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Two-Stage Hybrid Search & Self-RAG Verification</span>
+        # Hero Section
+        st.markdown("""
+<div style="text-align:center;padding:48px 0 20px 0;max-width:840px;margin:0 auto;">
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:9999px;padding:5px 14px;margin-bottom:20px;">
+<span style="color:#94a3b8;font-size:0.76rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">Two-Stage Hybrid Search & Self-RAG Verification</span>
 </div>
-<h1 style="font-size:3.2rem;font-weight:800;letter-spacing:-0.035em;line-height:1.15;margin:0 0 20px 0;color:#ffffff;">
+<h1 style="font-size:2.8rem;font-weight:700;letter-spacing:-0.03em;line-height:1.2;margin:0 0 16px 0;color:#ffffff;">
 Synthesize Deep Intelligence from <br/>
-<span style="background:linear-gradient(135deg,#a5b4fc 0%,#c084fc 45%,#f472b6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Private Documents & Live Web</span>
+Private Documents & Live Web
 </h1>
-<p style="font-size:1.1rem;color:#94a3b8;line-height:1.65;max-width:760px;margin:0 auto 34px auto;">
+<p style="font-size:1.02rem;color:#94a3b8;line-height:1.6;max-width:720px;margin:0 auto;">
 NexusRAG Studio fuses your private documents (PDF, DOCX, CSV, Excel, TXT) with real-time web research, ArXiv science papers, and Reddit discussions. Powered by BM25 + FAISS Reciprocal Rank Fusion, Cross-Encoder re-ranking, and zero-trust Supabase pgvector isolation.
 </p>
 </div>
 """, unsafe_allow_html=True)
 
-            # CTA Row
-            c_cta_l, c_cta1, c_cta2, c_cta_r = st.columns([1, 1.3, 1.3, 1])
-            with c_cta1:
-                if st.button("Get Started Free →", key="btn_hero_get_started", use_container_width=True):
-                    st.session_state["auth_view"] = "signin"
-                    st.rerun()
-            with c_cta2:
-                if st.button("Continue with Google", key="btn_hero_google", use_container_width=True):
-                    try:
-                        st.login("clerk")
-                    except Exception:
-                        try:
-                            st.login()
-                        except Exception as err:
-                            st.error(f"Sign-in error: {err}")
+        # Architectural Pillars (4 Cards - Clean, Unified Minimalist Boxes)
+        st.markdown("""
+<div style="margin-top:44px;margin-bottom:20px;text-align:center;">
+<span style="color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Core Capabilities</span>
+<h2 style="font-size:1.65rem;font-weight:700;color:#f8fafc;letter-spacing:-0.02em;margin:6px 0 0 0;">Engineered for Precision & Enterprise Scale</h2>
+</div>
 
-            # Architectural Pillars (4 Cards)
-            st.markdown("""
-<div style="margin-top:60px;margin-bottom:14px;text-align:center;">
-<span style="color:#818cf8;font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Core Capabilities</span>
-<h2 style="font-size:1.85rem;font-weight:800;color:#f8fafc;letter-spacing:-0.02em;margin:6px 0 0 0;">Engineered for Precision & Enterprise Scale</h2>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;gap:18px;align-items:stretch;">
+  <!-- Card 1 -->
+  <div style="background:#141722;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px 22px;display:flex;flex-direction:column;height:100%;min-height:200px;box-sizing:border-box;">
+    <div style="width:38px;height:38px;border-radius:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    </div>
+    <div style="font-size:1.1rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Two-Stage Hybrid Search</div>
+    <p style="font-size:0.88rem;color:#94a3b8;line-height:1.6;margin:0;flex-grow:1;">
+      Combines exact keyword BM25Okapi lexical matching with 384-dimensional dense semantic embeddings (all-MiniLM-L6-v2) via Reciprocal Rank Fusion (RRF), re-scored with MS-MARCO Cross-Encoder.
+    </p>
+  </div>
+
+  <!-- Card 2 -->
+  <div style="background:#141722;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px 22px;display:flex;flex-direction:column;height:100%;min-height:200px;box-sizing:border-box;">
+    <div style="width:38px;height:38px;border-radius:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </div>
+    <div style="font-size:1.1rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Omni-Source Research</div>
+    <p style="font-size:0.88rem;color:#94a3b8;line-height:1.6;margin:0;flex-grow:1;">
+      Fuses private local files (.pdf, .docx, .xlsx, .csv) with live external scraping from Wikipedia, ArXiv scientific papers, Reddit discussions, and arbitrary web URLs.
+    </p>
+  </div>
+
+  <!-- Card 3 -->
+  <div style="background:#141722;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px 22px;display:flex;flex-direction:column;height:100%;min-height:200px;box-sizing:border-box;">
+    <div style="width:38px;height:38px;border-radius:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <polyline points="9 12 11 14 15 10"/>
+      </svg>
+    </div>
+    <div style="font-size:1.1rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Zero-Trust Cloud Vault</div>
+    <p style="font-size:0.88rem;color:#94a3b8;line-height:1.6;margin:0;flex-grow:1;">
+      Multi-user cryptographic isolation on Supabase Cloud PostgreSQL 16 with pgvector HNSW cosine indexes, SHA-256 deduplication, and zero-trust audit logging.
+    </p>
+  </div>
+
+  <!-- Card 4 -->
+  <div style="background:#141722;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px 22px;display:flex;flex-direction:column;height:100%;min-height:200px;box-sizing:border-box;">
+    <div style="width:38px;height:38px;border-radius:10px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"/>
+        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"/>
+      </svg>
+    </div>
+    <div style="font-size:1.1rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Self-RAG Groundedness</div>
+    <p style="font-size:0.88rem;color:#94a3b8;line-height:1.6;margin:0;flex-grow:1;">
+      Automatic hallucination detection that cross-examines generated claims against retrieved passages to calculate a factual Groundedness Score (0% - 100%) and citation breadcrumbs.
+    </p>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
-            col_p1, col_p2 = st.columns(2)
-            with col_p1:
-                st.markdown("""
-<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
-<div style="width:42px;height:42px;border-radius:12px;background:rgba(99,102,241,0.18);display:flex;align-items:center;justify-content:center;color:#818cf8;font-size:1.2rem;margin-bottom:14px;">⚡</div>
-<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Two-Stage Hybrid Search</h3>
-<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
-Combines exact keyword BM25Okapi lexical matching with 384-dimensional dense semantic embeddings (all-MiniLM-L6-v2) via Reciprocal Rank Fusion (RRF), re-scored with MS-MARCO Cross-Encoder.
-</p>
+        # Quantitative Benchmarks Ribbon (Clean, Single Line)
+        st.markdown("""
+<div style="margin-top:26px;background:#141722;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:22px 18px;">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;align-items:center;">
+<div style="white-space:nowrap;padding:4px 6px;">
+<div style="font-size:1.85rem;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">100.0%</div>
+<div style="font-size:0.74rem;color:#818cf8;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:4px;">Hit Rate @ 3</div>
 </div>
-""", unsafe_allow_html=True)
-
-                st.markdown("""
-<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
-<div style="width:42px;height:42px;border-radius:12px;background:rgba(16,185,129,0.18);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.2rem;margin-bottom:14px;">🛡️</div>
-<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Zero-Trust Cloud Vault</h3>
-<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
-Multi-user cryptographic isolation on Supabase Cloud PostgreSQL 16 with pgvector HNSW cosine indexes, SHA-256 deduplication, and zero-trust audit logging.
-</p>
+<div style="white-space:nowrap;padding:4px 6px;">
+<div style="font-size:1.85rem;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">&lt; 13 ms</div>
+<div style="font-size:0.74rem;color:#818cf8;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:4px;">Dense Vector Search</div>
 </div>
-""", unsafe_allow_html=True)
-
-            with col_p2:
-                st.markdown("""
-<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
-<div style="width:42px;height:42px;border-radius:12px;background:rgba(236,72,153,0.18);display:flex;align-items:center;justify-content:center;color:#f472b6;font-size:1.2rem;margin-bottom:14px;">🌐</div>
-<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Omni-Source Research</h3>
-<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
-Fuses private local files (.pdf, .docx, .xlsx, .csv) with live external scraping from Wikipedia, ArXiv scientific papers, Reddit discussions, and arbitrary web URLs.
-</p>
+<div style="white-space:nowrap;padding:4px 6px;">
+<div style="font-size:1.85rem;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">0.5 ms</div>
+<div style="font-size:0.74rem;color:#818cf8;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:4px;">BM25 Keyword Search</div>
 </div>
-""", unsafe_allow_html=True)
-
-                st.markdown("""
-<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
-<div style="width:42px;height:42px;border-radius:12px;background:rgba(245,158,11,0.18);display:flex;align-items:center;justify-content:center;color:#fbbf24;font-size:1.2rem;margin-bottom:14px;">🧠</div>
-<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Self-RAG Groundedness</h3>
-<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
-Automatic hallucination detection that cross-examines generated claims against retrieved passages to calculate a factual Groundedness Score (0% - 100%) and citation breadcrumbs.
-</p>
-</div>
-""", unsafe_allow_html=True)
-
-            # Quantitative Benchmarks Ribbon
-            st.markdown("""
-<div style="margin-top:30px;background:radial-gradient(100% 100% at 50% 0%,rgba(30,41,59,0.5) 0%,rgba(15,23,42,0.8) 100%);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:26px 30px;box-shadow:0 16px 40px rgba(0,0,0,0.5);">
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;text-align:center;">
-<div>
-<div style="font-size:2.1rem;font-weight:800;color:#10b981;letter-spacing:-0.03em;">100.0%</div>
-<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">Hit Rate @ 3</div>
-</div>
-<div>
-<div style="font-size:2.1rem;font-weight:800;color:#818cf8;letter-spacing:-0.03em;">&lt; 13 ms</div>
-<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">Dense Vector Search</div>
-</div>
-<div>
-<div style="font-size:2.1rem;font-weight:800;color:#38bdf8;letter-spacing:-0.03em;">0.5 ms</div>
-<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">BM25 Keyword Search</div>
-</div>
-<div>
-<div style="font-size:2.1rem;font-weight:800;color:#f472b6;letter-spacing:-0.03em;">256-Bit</div>
-<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">TLS Multi-Device Sync</div>
+<div style="white-space:nowrap;padding:4px 6px;">
+<div style="font-size:1.85rem;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">256-Bit</div>
+<div style="font-size:0.74rem;color:#818cf8;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-top:4px;">TLS Multi-Device Sync</div>
 </div>
 </div>
 </div>
 """, unsafe_allow_html=True)
 
-            # Bottom CTA Banner
-            st.markdown("""
-<div style="text-align:center;margin-top:50px;padding:36px 20px;background:radial-gradient(ellipse at 50% 50%,rgba(79,70,229,0.15) 0%,transparent 70%);border:1px solid rgba(139,92,246,0.25);border-radius:24px;">
-<h2 style="font-size:1.8rem;font-weight:800;color:#ffffff;margin:0 0 10px 0;">Ready to experience the future of knowledge retrieval?</h2>
-<p style="color:#94a3b8;font-size:0.96rem;margin:0 0 24px 0;">Join researchers and engineers using NexusRAG Studio for deep grounded synthesis.</p>
+        # Bottom Banner
+        st.markdown("""
+<div style="text-align:center;margin-top:40px;padding:32px 20px;background:#141722;border:1px solid rgba(255,255,255,0.08);border-radius:14px;">
+<h2 style="font-size:1.5rem;font-weight:700;color:#ffffff;margin:0 0 8px 0;">Ready to experience the future of knowledge retrieval?</h2>
+<p style="color:#94a3b8;font-size:0.94rem;margin:0;">Join researchers and engineers using NexusRAG Studio for deep grounded synthesis.</p>
 </div>
 """, unsafe_allow_html=True)
 
-            c_bot_l, c_bot_c, c_bot_r = st.columns([1, 1.4, 1])
-            with c_bot_c:
-                if st.button("Launch Studio & Sign In →", key="btn_footer_get_started", use_container_width=True):
-                    st.session_state["auth_view"] = "signin"
-                    st.rerun()
-
-            st.stop()
-
-        else:
-            # Sign-In View
-            auth_portal_css = """
-<style>
-[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
-header[data-testid="stHeader"] { background: transparent !important; }
-
-/* Obsidian Titanium Canvas with Nebula Aura */
-.stApp {
-    background-color: #0b0d14 !important;
-    background-image:
-        radial-gradient(ellipse 90% 60% at 10% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 80% 60% at 90% 100%, rgba(139, 92, 246, 0.09) 0%, transparent 60%),
-        radial-gradient(circle at 50% 30%, rgba(6, 182, 212, 0.04) 0%, transparent 70%),
-        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) !important;
-    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px !important;
-    background-attachment: fixed !important;
-}
-
-.main .block-container {
-    max-width: 440px !important;
-    padding-top: 2rem !important;
-    padding-bottom: 3.5rem !important;
-    margin: 0 auto !important;
-}
-
-/* Back Button */
-div[class*="st-key-btn_back_to_landing"] button {
-    background: transparent !important;
-    color: #94a3b8 !important;
-    border: none !important;
-    font-size: 0.86rem !important;
-    font-weight: 500 !important;
-    box-shadow: none !important;
-    transition: all 0.15s ease !important;
-    padding: 0 !important;
-    margin-bottom: 12px !important;
-    text-align: left !important;
-}
-div[class*="st-key-btn_back_to_landing"] button:hover {
-    color: #f1f5f9 !important;
-    background: transparent !important;
-    transform: none !important;
-}
-
-/* Card Container — Obsidian Glass with Subtle Violet Rim */
-div[class*="st-key-clerk_card_wrapper"],
-div[data-testid="stVerticalBlockBorderWrapper"]:has(div[class*="st-key-clerk_card_wrapper"]) {
-    background: rgba(19, 22, 34, 0.92) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-top: 1px solid rgba(139, 92, 246, 0.4) !important;
-    border-radius: 24px !important;
-    backdrop-filter: blur(24px) !important;
-    -webkit-backdrop-filter: blur(24px) !important;
-    padding: 30px 28px 28px 28px !important;
-    box-shadow: 0 24px 70px -15px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(99, 102, 241, 0.22) !important;
-}
-
-/* Continue with Google Button — Crisp White Pill with 4-Color Icon */
-div[class*="st-key-btn_clerk_auth_login"] button {
-    background: #ffffff !important;
-    color: #111827 !important;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-    border-radius: 10px !important;
-    height: 44px !important;
-    min-height: 44px !important;
-    font-size: 0.94rem !important;
-    font-weight: 600 !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    cursor: pointer !important;
-}
-
-div[class*="st-key-btn_clerk_auth_login"] button:hover {
-    background: #f8fafc !important;
-    border-color: #ffffff !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
-    transform: translateY(-1px) !important;
-}
-
-/* Official Google "G" 4-color Logo permanently visible */
-div[class*="st-key-btn_clerk_auth_login"] button::before {
-    content: "" !important;
-    display: inline-block !important;
-    position: static !important;
-    width: 18px !important;
-    height: 18px !important;
-    min-width: 18px !important;
-    min-height: 18px !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important;
-    background-size: contain !important;
-    background-position: center !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    margin: 0 !important;
-    flex: 0 0 auto !important;
-    flex-shrink: 0 !important;
-}
-
-div[class*="st-key-btn_clerk_auth_login"] button div[data-testid="stMarkdownContainer"],
-div[class*="st-key-btn_clerk_auth_login"] button div {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    max-width: fit-content !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-div[class*="st-key-btn_clerk_auth_login"] button p {
-    color: #111827 !important;
-    font-size: 0.94rem !important;
-    font-weight: 600 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    text-align: left !important;
-}
-
-/* Email Input Field & Label */
-div[class*="st-key-clerk_email_input"] label p {
-    color: #e2e8f0 !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    margin-bottom: 5px !important;
-}
-div[class*="st-key-clerk_email_input"] input {
-    background: #0f111a !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 10px !important;
-    height: 44px !important;
-    padding: 0 14px !important;
-    font-size: 0.92rem !important;
-    box-shadow: none !important;
-    transition: all 0.15s ease !important;
-}
-div[class*="st-key-clerk_email_input"] input::placeholder {
-    color: #64748b !important;
-}
-div[class*="st-key-clerk_email_input"] input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 1px #6366f1, 0 0 16px rgba(99, 102, 241, 0.3) !important;
-}
-
-/* Continue ▸ Electric Violet Button */
-div[class*="st-key-btn_clerk_email_continue"] button {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 10px !important;
-    height: 44px !important;
-    min-height: 44px !important;
-    font-size: 0.94rem !important;
-    font-weight: 600 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: 0 4px 18px rgba(79, 70, 229, 0.45) !important;
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    cursor: pointer !important;
-}
-div[class*="st-key-btn_clerk_email_continue"] button:hover {
-    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6d28d9 100%) !important;
-    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.65) !important;
-    transform: translateY(-1px) !important;
-}
-div[class*="st-key-btn_clerk_email_continue"] button p {
-    color: #ffffff !important;
-    font-weight: 600 !important;
-    font-size: 0.94rem !important;
-    margin: 0 !important;
-}
-</style>
-"""
-            st.markdown(auth_portal_css, unsafe_allow_html=True)
-
-            if st.button("← Back to Product Overview", key="btn_back_to_landing"):
-                st.session_state["auth_view"] = "landing"
-                st.rerun()
-
-            st.markdown("""
-<p style="text-align:center;font-size:0.95rem;color:#94a3b8;margin:0 0 18px 0;font-weight:400;">
-Welcome back - pick up where you left off.
-</p>
-""", unsafe_allow_html=True)
-
-            with st.container(border=True, key="clerk_card_wrapper"):
-                st.markdown("""
-<div style="text-align:center;margin-bottom:20px;">
-<div style="display:flex;justify-content:center;margin-bottom:12px;">
-<div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#d946ef 100%);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(124,58,237,0.45);border:1px solid rgba(255,255,255,0.25);">
-<svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
-</div>
-</div>
-<h2 style="font-size:1.6rem;font-weight:800;color:#f8fafc;letter-spacing:-0.03em;margin:0 0 6px 0;">Sign in to NexusRAG Studio</h2>
-<p style="font-size:0.92rem;color:#94a3b8;margin:0;font-weight:400;">Welcome back! Please sign in to continue</p>
-</div>
-""", unsafe_allow_html=True)
-
-                if st.button("Continue with Google", use_container_width=True, key="btn_clerk_auth_login"):
-                    try:
-                        st.login("clerk")
-                    except Exception:
-                        try:
-                            st.login()
-                        except Exception as err:
-                            st.error(f"Sign-in error: {err}")
-
-                st.markdown("""
-<div style="display:flex;align-items:center;margin:18px 0 16px 0;">
-<div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
-<span style="padding:0 12px;font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.06em;">OR</span>
-<div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
-</div>
-""", unsafe_allow_html=True)
-
-                email_val = st.text_input("Email address", placeholder="Enter your email address", key="clerk_email_input")
-
-                if st.button("Continue ▸", type="primary", use_container_width=True, key="btn_clerk_email_continue"):
-                    try:
-                        st.login("clerk")
-                    except Exception:
-                        try:
-                            st.login()
-                        except Exception as err:
-                            st.error(f"Sign-in error: {err}")
-
-            st.markdown("""
-<p style="text-align:center;font-size:0.88rem;color:#94a3b8;margin-top:20px;">
-Don't have an account? <strong style="color:#818cf8;cursor:pointer;">Sign up</strong>
-</p>
-""", unsafe_allow_html=True)
-            st.stop()
+        st.stop()
     else:
         current_user = dict(st.user)
         current_user_id = current_user.get("email") or current_user.get("sub") or "default_user"
@@ -4087,7 +3781,9 @@ for idx, msg in enumerate(st.session_state.messages):
                 r"as an ai,? i (?:can't|cannot) generate images?"
             ]
             is_refusal = any(re.search(p, (msg.get("content") or "").strip(), re.I) for p in refusal_patterns)
-            is_img_q = bool(re.search(r"\b(images?|pictures?|photos?|diagrams?|illustrations?|figures?|visuals?)\b", user_q, re.IGNORECASE))
+            is_pure_img_req = OmniSearchEngine.is_pure_image_query(user_q)
+            is_genai_req = OmniSearchEngine.is_genai_image_query(user_q)
+            is_img_q = is_pure_img_req or bool(re.search(r"\b(images?|pictures?|photos?|diagrams?|illustrations?|figures?|visuals?)\b", user_q, re.IGNORECASE))
 
             if is_img_q and not msg.get("images"):
                 try:
@@ -4099,18 +3795,20 @@ for idx, msg in enumerate(st.session_state.messages):
                 except Exception:
                     pass
 
-            is_pure_img_req = OmniSearchEngine.is_pure_image_query(user_q)
-
             asst_text = msg.get("content", "")
-            if (is_refusal or is_pure_img_req or (is_img_q and "direct-link images" in asst_text.lower())) and msg.get("images"):
+            has_hallucination = bool(re.search(r"\b(?:the image in focus|informative overview|key visual moments|in this image|this photograph)\b", asst_text, re.IGNORECASE))
+            if (is_refusal or is_pure_img_req or has_hallucination or (is_img_q and "direct-link images" in asst_text.lower())) and msg.get("images"):
                 cleaned_entity = OmniSearchEngine.clean_entity_query(user_q)
-                asst_text = f"Here are verified images of **{cleaned_entity}** from official encyclopedia and media archives:"
+                if is_genai_req:
+                    asst_text = f"Here is the GenAI visual synthesis for **{cleaned_entity}** (powered by FLUX):"
+                else:
+                    asst_text = f"Here are verified images of **{cleaned_entity}** from official media archives:"
 
             st.markdown(clean_markdown_content(asst_text, query=user_q))
 
             if msg.get("images"):
                 display_imgs = [img for img in msg["images"] if img.get("image_url", "").startswith("http")]
-                if is_pure_img_req and display_imgs:
+                if (is_pure_img_req or is_img_q or is_genai_req) and display_imgs:
                     # Render top images with st.image for guaranteed visual display
                     num_cols = min(len(display_imgs), 3)
                     cols = st.columns(num_cols)
@@ -4121,8 +3819,9 @@ for idx, msg in enumerate(st.session_state.messages):
                             clean_t = re.sub(r"^(?:The\s+President[^\n,]+,\s*)", "", clean_t).strip()
                             if len(clean_t) > 36:
                                 clean_t = clean_t[:33] + "..."
+                            cap_text = f"{clean_t} • {img.get('caption', 'Visual Asset')}"
                             try:
-                                st.image(img["image_url"], caption=clean_t or "Visual Asset", use_container_width=True)
+                                st.image(img["image_url"], caption=cap_text, use_container_width=True)
                             except Exception:
                                 pass
                     if len(display_imgs) > num_cols:
@@ -4383,36 +4082,50 @@ if active_query:
                                 continue
                         entity_images.append({"title": clean_src, "image_url": c["image_url"], "source_url": c.get("page", "#"), "caption": "Wikipedia Reference"})
 
-            # ── PURE IMAGE REQUEST: Render images directly without LLM hallucination ──
+            # ── PURE IMAGE / GENAI REQUEST: Render images directly without LLM hallucination ──
             if is_pure_image_request:
                 cleaned_entity = OmniSearchEngine.clean_entity_query(active_query)
-                if entity_images:
-                    full_response = f"Here are verified images of **{cleaned_entity}** from official encyclopedia and media archives:"
-                    st.markdown(full_response)
+                is_genai = OmniSearchEngine.is_genai_image_query(active_query)
 
-                    # Primary visual: render top images with st.image for guaranteed display
-                    display_imgs = [img for img in entity_images if img.get("image_url", "").startswith("http")]
-                    num_cols = min(len(display_imgs), 3)
-                    if num_cols > 0:
-                        cols = st.columns(num_cols)
-                        for i, img in enumerate(display_imgs[:num_cols]):
-                            with cols[i]:
-                                clean_t = re.sub(r"^File:", "", img.get("title", "")).replace("_", " ")
-                                clean_t = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp)$", "", clean_t, flags=re.IGNORECASE).strip()
-                                clean_t = re.sub(r"^(?:The\s+President[^\n,]+,\s*)", "", clean_t).strip()
-                                if len(clean_t) > 36:
-                                    clean_t = clean_t[:33] + "..."
-                                try:
-                                    st.image(img["image_url"], caption=clean_t or "Visual Asset", use_container_width=True)
-                                except Exception:
-                                    pass
+                # If no entity images retrieved yet, synthesize immediately with GenAI FLUX
+                if not entity_images:
+                    genai_img = OmniSearchEngine.generate_ai_image(cleaned_entity)
+                    entity_images = [genai_img]
 
-                    # Also render remaining images as media cards
-                    if len(display_imgs) > num_cols:
-                        render_entity_images(display_imgs[num_cols:], query=active_query, content=full_response)
+                if is_genai:
+                    full_response = f"Here is the GenAI visual synthesis for **{cleaned_entity}** (powered by FLUX):"
                 else:
-                    full_response = f"No verified images could be found for **{cleaned_entity}** in Wikimedia Commons or encyclopedia archives."
-                    st.warning(full_response)
+                    full_response = f"Here are verified images of **{cleaned_entity}** from official encyclopedia and media archives:"
+                st.markdown(full_response)
+
+                # Primary visual: render top images with st.image for guaranteed display
+                display_imgs = [img for img in entity_images if img.get("image_url", "").startswith("http")]
+                num_cols = min(len(display_imgs), 3)
+                if num_cols > 0:
+                    cols = st.columns(num_cols)
+                    for i, img in enumerate(display_imgs[:num_cols]):
+                        with cols[i]:
+                            clean_t = re.sub(r"^File:", "", img.get("title", "")).replace("_", " ")
+                            clean_t = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp)$", "", clean_t, flags=re.IGNORECASE).strip()
+                            clean_t = re.sub(r"^(?:The\s+President[^\n,]+,\s*)", "", clean_t).strip()
+                            if len(clean_t) > 36:
+                                clean_t = clean_t[:33] + "..."
+                            cap_text = f"{clean_t} • {img.get('caption', 'Visual Asset')}"
+                            try:
+                                st.image(img["image_url"], caption=cap_text, use_container_width=True)
+                            except Exception:
+                                pass
+
+                # If user asked for an entity, also offer a GenAI AI-generated portrait option!
+                if not is_genai and display_imgs and not any(im.get("is_genai") for im in display_imgs):
+                    with st.expander("✨ Synthesize with GenAI (FLUX Neural Engine)", expanded=False):
+                        ai_prompt = f"{cleaned_entity}, photorealistic, dramatic lighting, 8k"
+                        ai_img_data = OmniSearchEngine.generate_ai_image(ai_prompt)
+                        st.image(ai_img_data["image_url"], caption=f"GenAI FLUX Synthesis • {cleaned_entity}", use_container_width=True)
+
+                # Also render remaining images as media cards
+                if len(display_imgs) > num_cols:
+                    render_entity_images(display_imgs[num_cols:], query=active_query, content=full_response)
 
             else:
                 # ── STANDARD QUERY: Stream LLM response + optional image cards ──
@@ -4479,7 +4192,21 @@ if active_query:
                     st.markdown(full_response)
 
                 if entity_images:
-                    render_entity_images(entity_images, query=active_query, content=full_response)
+                    display_imgs = [img for img in entity_images if img.get("image_url", "").startswith("http")]
+                    if is_image_query and display_imgs:
+                        num_cols = min(len(display_imgs), 3)
+                        cols = st.columns(num_cols)
+                        for i, img in enumerate(display_imgs[:num_cols]):
+                            with cols[i]:
+                                clean_t = re.sub(r"^File:", "", img.get("title", "")).replace("_", " ")
+                                clean_t = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp)$", "", clean_t, flags=re.IGNORECASE).strip()
+                                cap_t = f"{clean_t} • {img.get('caption', 'Visual Asset')}"
+                                try:
+                                    st.image(img["image_url"], caption=cap_t, use_container_width=True)
+                                except Exception:
+                                    pass
+                    if len(display_imgs) > 3 or not is_image_query:
+                        render_entity_images(entity_images, query=active_query, content=full_response)
 
             if verify_hallucinations and full_response:
                 with st.spinner("Self-RAG Guardrail: Auditing groundedness..."):
