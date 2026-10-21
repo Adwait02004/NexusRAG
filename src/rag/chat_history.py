@@ -10,13 +10,13 @@ class ChatHistoryManager:
     Manages persistent user chat sessions stored on disk as JSON files.
     Allows loading, updating, listing, and deleting conversations just like ChatGPT.
     """
-    _cached_chats: Optional[List[Dict[str, Any]]] = None
-    _last_cache_time: float = 0.0
-    _cached_archived_chats: Optional[List[Dict[str, Any]]] = None
-    _last_archived_cache_time: float = 0.0
+    _cached_chats: Dict[str, Any] = {}
+    _last_cache_time: Dict[str, float] = {}
+    _cached_archived_chats: Dict[str, Any] = {}
+    _last_archived_cache_time: Dict[str, float] = {}
     _initial_sync_done: bool = False
 
-    def __init__(self, storage_dir: Optional[Path | str] = None, *args, pg_db: Optional[Any] = None, **kwargs):
+    def __init__(self, storage_dir: Optional[Path | str] = None, *args, pg_db: Optional[Any] = None, user_id: Optional[str] = None, **kwargs):
         if storage_dir is None:
             # Default to data/chats under project root safely
             _curr = Path(__file__).resolve()
@@ -31,6 +31,7 @@ class ChatHistoryManager:
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.pg_db = pg_db or kwargs.get("pg_db") or (args[0] if args else None)
+        self.user_id = user_id or kwargs.get("user_id") or "default_user"
 
         # Auto-connect to PostgreSQL / Supabase if environment variables or secrets exist
         keys_to_check = ["DATABASE_URL", "POSTGRES_HOST", "POSTGRES_URL", "database_url", "postgres_host", "postgres_url"]
@@ -88,18 +89,19 @@ class ChatHistoryManager:
 
     def list_chats(self, include_archived: bool = False) -> List[Dict[str, Any]]:
         """List all saved conversations, sorted with the most recent first."""
+        cache_key = self.user_id
         now = time.time()
-        if not include_archived and ChatHistoryManager._cached_chats is not None and (now - ChatHistoryManager._last_cache_time < 15):
-            return ChatHistoryManager._cached_chats
+        if not include_archived and cache_key in ChatHistoryManager._cached_chats and (now - ChatHistoryManager._last_cache_time.get(cache_key, 0) < 15):
+            return ChatHistoryManager._cached_chats[cache_key]
 
         # 1. Check Cloud PostgreSQL / Supabase
         if self.pg_db and self.pg_db.is_connected:
             try:
-                cloud_chats = self.pg_db.list_chat_sessions(include_archived=include_archived)
-                if cloud_chats:
+                cloud_chats = self.pg_db.list_chat_sessions(include_archived=include_archived, user_id=self.user_id)
+                if cloud_chats is not None:
                     if not include_archived:
-                        ChatHistoryManager._cached_chats = cloud_chats
-                        ChatHistoryManager._last_cache_time = now
+                        ChatHistoryManager._cached_chats[cache_key] = cloud_chats
+                        ChatHistoryManager._last_cache_time[cache_key] = now
                     return cloud_chats
             except Exception as e:
                 print(f"[WARN] Failed to list chats from cloud database: {e}")
@@ -130,23 +132,24 @@ class ChatHistoryManager:
         # Sort descending by updated_at
         chats.sort(key=lambda x: x["updated_at"], reverse=True)
         if not include_archived:
-            ChatHistoryManager._cached_chats = chats
-            ChatHistoryManager._last_cache_time = now
+            ChatHistoryManager._cached_chats[cache_key] = chats
+            ChatHistoryManager._last_cache_time[cache_key] = now
         return chats
 
     def list_archived_chats(self) -> List[Dict[str, Any]]:
         """List all archived conversations."""
+        cache_key = self.user_id
         now = time.time()
-        if ChatHistoryManager._cached_archived_chats is not None and (now - ChatHistoryManager._last_archived_cache_time < 15):
-            return ChatHistoryManager._cached_archived_chats
+        if cache_key in ChatHistoryManager._cached_archived_chats and (now - ChatHistoryManager._last_archived_cache_time.get(cache_key, 0) < 15):
+            return ChatHistoryManager._cached_archived_chats[cache_key]
 
         # 1. Check Cloud PostgreSQL / Supabase
         if self.pg_db and self.pg_db.is_connected:
             try:
-                cloud_chats = self.pg_db.list_chat_sessions(include_archived=True)
+                cloud_chats = self.pg_db.list_chat_sessions(include_archived=True, user_id=self.user_id)
                 archived = [c for c in cloud_chats if c.get("is_archived")]
-                ChatHistoryManager._cached_archived_chats = archived
-                ChatHistoryManager._last_archived_cache_time = now
+                ChatHistoryManager._cached_archived_chats[cache_key] = archived
+                ChatHistoryManager._last_archived_cache_time[cache_key] = now
                 return archived
             except Exception as e:
                 print(f"[WARN] Failed to list archived chats from cloud database: {e}")
@@ -171,14 +174,14 @@ class ChatHistoryManager:
                 print(f"[WARN] Failed to read archived chat {file_path.name}: {e}")
 
         archived.sort(key=lambda x: x["updated_at"], reverse=True)
-        ChatHistoryManager._cached_archived_chats = archived
-        ChatHistoryManager._last_archived_cache_time = now
+        ChatHistoryManager._cached_archived_chats[cache_key] = archived
+        ChatHistoryManager._last_archived_cache_time[cache_key] = now
         return archived
 
     def archive_chat(self, chat_id: str) -> bool:
         """Mark a chat session as archived."""
-        ChatHistoryManager._cached_chats = None
-        ChatHistoryManager._cached_archived_chats = None
+        ChatHistoryManager._cached_chats.pop(self.user_id, None)
+        ChatHistoryManager._cached_archived_chats.pop(self.user_id, None)
         if self.pg_db and self.pg_db.is_connected:
             self.pg_db.set_chat_archived(chat_id, True)
 
@@ -198,8 +201,8 @@ class ChatHistoryManager:
 
     def unarchive_chat(self, chat_id: str) -> bool:
         """Restore an archived chat session back to active list."""
-        ChatHistoryManager._cached_chats = None
-        ChatHistoryManager._cached_archived_chats = None
+        ChatHistoryManager._cached_chats.pop(self.user_id, None)
+        ChatHistoryManager._cached_archived_chats.pop(self.user_id, None)
         if self.pg_db and self.pg_db.is_connected:
             self.pg_db.set_chat_archived(chat_id, False)
 
@@ -248,8 +251,8 @@ class ChatHistoryManager:
         """Atomically persist or update conversation messages and metadata."""
         if not messages:
             return
-        ChatHistoryManager._cached_chats = None
-        ChatHistoryManager._cached_archived_chats = None
+        ChatHistoryManager._cached_chats.pop(self.user_id, None)
+        ChatHistoryManager._cached_archived_chats.pop(self.user_id, None)
 
         file_path = self.storage_dir / f"{chat_id}.json"
         existing_data = {}
@@ -277,7 +280,13 @@ class ChatHistoryManager:
         # 1. Sync to Cloud PostgreSQL / Supabase
         if self.pg_db and self.pg_db.is_connected:
             try:
-                self.pg_db.save_chat_session(chat_id, title, messages, is_archived=existing_data.get("is_archived", False))
+                self.pg_db.save_chat_session(
+                    chat_id,
+                    title,
+                    messages,
+                    is_archived=existing_data.get("is_archived", False),
+                    user_id=self.user_id
+                )
             except Exception as e_pg_save:
                 print(f"[WARN] Failed to mirror chat to cloud database: {e_pg_save}")
 
@@ -288,7 +297,8 @@ class ChatHistoryManager:
             "title": title,
             "created_at": existing_data.get("created_at", now),
             "updated_at": now,
-            "messages": messages
+            "messages": messages,
+            "user_id": self.user_id
         }
 
         temp_path = self.storage_dir / f"{chat_id}.tmp"
@@ -303,8 +313,8 @@ class ChatHistoryManager:
 
     def delete_chat(self, chat_id: str) -> bool:
         """Delete a saved chat history file."""
-        ChatHistoryManager._cached_chats = None
-        ChatHistoryManager._cached_archived_chats = None
+        ChatHistoryManager._cached_chats.pop(self.user_id, None)
+        ChatHistoryManager._cached_archived_chats.pop(self.user_id, None)
         if self.pg_db and self.pg_db.is_connected:
             self.pg_db.delete_chat_session(chat_id)
 

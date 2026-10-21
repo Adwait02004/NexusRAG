@@ -2820,15 +2820,48 @@ def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrie
     return rag_engine.stream_query(query, **kwargs)
 
 
+# ─── User Authentication Gate (Clerk via OpenID Connect) ─── #
+is_auth_configured = False
+try:
+    if hasattr(st, "secrets") and "auth" in st.secrets:
+        is_auth_configured = True
+except Exception:
+    is_auth_configured = False
+
+current_user = None
+current_user_id = "default_user"
+if is_auth_configured and hasattr(st, "user"):
+    if not st.user.is_logged_in:
+        st.markdown("""
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:55vh; text-align:center; padding: 2rem 1rem;">
+                <div style="width:58px; height:58px; border-radius:18px; background:linear-gradient(135deg, #6366f1, #a855f7); display:flex; align-items:center; justify-content:center; margin-bottom:18px; box-shadow:0 8px 32px rgba(99,102,241,0.4);">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
+                </div>
+                <h1 style="font-size:2rem; font-weight:800; margin-bottom:8px; background:linear-gradient(135deg, #f8fafc, #cbd5e1); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">NexusRAG Studio</h1>
+                <p style="color:#94a3b8; font-size:0.92rem; max-width:420px; margin-bottom:24px; line-height:1.5;">
+                    Sign in with Google to access your private knowledge library and cloud-synced conversations.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
+        col_c1, col_c2, col_c3 = st.columns([1, 1.2, 1])
+        with col_c2:
+            if st.button("Continue with Google", icon=":material/login:", type="primary", use_container_width=True):
+                st.login("clerk")
+        st.stop()
+    else:
+        current_user = dict(st.user)
+        current_user_id = current_user.get("sub") or current_user.get("email") or "default_user"
+
+
 # ─── Chat History Manager ─── #
 @st.cache_resource(show_spinner=False)
-def get_chat_manager(_pg_db=None):
+def get_chat_manager(_pg_db=None, user_id="default_user"):
     try:
-        return ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=_pg_db)
+        return ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=_pg_db, user_id=user_id)
     except TypeError:
-        return ChatHistoryManager(PROJECT_DIR / "data" / "chats")
+        return ChatHistoryManager(PROJECT_DIR / "data" / "chats", user_id=user_id)
 
-chat_mgr = get_chat_manager(getattr(rag, "pg_db", None))
+chat_mgr = get_chat_manager(getattr(rag, "pg_db", None), user_id=current_user_id)
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
     st.session_state.messages = []
@@ -3107,6 +3140,24 @@ with st.sidebar:
             </div>
         </div>
     """, unsafe_allow_html=True)
+
+    # ── Authenticated User Profile & Logout ──
+    if current_user:
+        u_name = current_user.get("name") or current_user.get("email") or "Google User"
+        u_email = current_user.get("email", "")
+        u_pic = current_user.get("picture")
+        pic_html = f'<img src="{u_pic}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />' if u_pic else f'<div style="width:28px;height:28px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;">{u_name[:1].upper()}</div>'
+        st.markdown(f"""
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-top:8px;">
+                {pic_html}
+                <div style="display:flex; flex-direction:column; overflow:hidden;">
+                    <span style="font-size:0.78rem; font-weight:600; color:#f1f5f9; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{u_name}</span>
+                    <span style="font-size:0.66rem; color:#94a3b8; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{u_email}</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Sign out", icon=":material/logout:", key="btn_clerk_logout", use_container_width=True):
+            st.logout()
 
 
 # (Main header moved to sidebar to maximize vertical screen canvas)

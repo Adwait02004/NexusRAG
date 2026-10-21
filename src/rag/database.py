@@ -172,15 +172,17 @@ class PostgresVectorDB:
             executed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
 
-        -- 6. Shared Cloud Chat Sessions (Supabase Sync)
+        -- 6. Shared Cloud Chat Sessions (Supabase Sync with User Scoping)
         CREATE TABLE IF NOT EXISTS chat_sessions (
             id VARCHAR(100) PRIMARY KEY,
             title VARCHAR(255) NOT NULL,
             messages JSONB NOT NULL DEFAULT '[]'::jsonb,
             is_archived BOOLEAN NOT NULL DEFAULT FALSE,
             created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+            user_id VARCHAR(100) DEFAULT 'default_user'
         );
+        ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS user_id VARCHAR(100) DEFAULT 'default_user';
         """
         try:
             with self.engine.begin() as conn:
@@ -372,26 +374,36 @@ class PostgresVectorDB:
         except Exception as e:
             logger.warning(f"Failed to write audit log: {e}")
 
-    def save_chat_session(self, chat_id: str, title: str, messages: List[Dict[str, Any]], is_archived: bool = False):
-        """Save or update chat session in PostgreSQL / Supabase."""
+    def save_chat_session(
+        self,
+        chat_id: str,
+        title: str,
+        messages: List[Dict[str, Any]],
+        is_archived: bool = False,
+        user_id: Optional[str] = None
+    ):
+        """Save or update chat session in PostgreSQL / Supabase with user scoping."""
         if not self.is_connected:
             return
         from sqlalchemy import text
+        uid = user_id or "default_user"
         try:
             with self.engine.begin() as conn:
                 conn.execute(text("""
-                    INSERT INTO chat_sessions (id, title, messages, is_archived, updated_at)
-                    VALUES (:id, :title, :messages, :archived, CURRENT_TIMESTAMP)
+                    INSERT INTO chat_sessions (id, title, messages, is_archived, updated_at, user_id)
+                    VALUES (:id, :title, :messages, :archived, CURRENT_TIMESTAMP, :user_id)
                     ON CONFLICT (id) DO UPDATE SET
                         title = EXCLUDED.title,
                         messages = EXCLUDED.messages,
                         is_archived = EXCLUDED.is_archived,
-                        updated_at = CURRENT_TIMESTAMP;
+                        updated_at = CURRENT_TIMESTAMP,
+                        user_id = COALESCE(EXCLUDED.user_id, chat_sessions.user_id);
                 """), {
                     "id": chat_id,
                     "title": title,
                     "messages": json.dumps(messages),
-                    "archived": is_archived
+                    "archived": is_archived,
+                    "user_id": uid
                 })
         except Exception as e:
             logger.warning(f"Failed to save chat session to PostgreSQL: {e}")
@@ -422,18 +434,22 @@ class PostgresVectorDB:
             logger.warning(f"Failed to load chat session from PostgreSQL: {e}")
         return None
 
-    def list_chat_sessions(self, include_archived: bool = False) -> List[Dict[str, Any]]:
-        """List chat sessions from PostgreSQL / Supabase."""
+    def list_chat_sessions(self, include_archived: bool = False, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List chat sessions from PostgreSQL / Supabase with user scoping."""
         if not self.is_connected:
             return []
         from sqlalchemy import text
         try:
             with self.engine.connect() as conn:
-                query = "SELECT id, title, is_archived, created_at, updated_at, jsonb_array_length(messages) as message_count FROM chat_sessions"
+                query = "SELECT id, title, is_archived, created_at, updated_at, jsonb_array_length(messages) as message_count, user_id FROM chat_sessions WHERE 1=1"
+                params = {}
                 if not include_archived:
-                    query += " WHERE is_archived = FALSE"
+                    query += " AND is_archived = FALSE"
+                if user_id:
+                    query += " AND (user_id = :user_id OR user_id = 'default_user' OR user_id IS NULL)"
+                    params["user_id"] = user_id
                 query += " ORDER BY updated_at DESC;"
-                rows = conn.execute(text(query)).fetchall()
+                rows = conn.execute(text(query), params).fetchall()
                 chats = []
                 for r in rows:
                     chats.append({
@@ -442,7 +458,8 @@ class PostgresVectorDB:
                         "created_at": r[3].timestamp() if r[3] else 0,
                         "updated_at": r[4].timestamp() if r[4] else 0,
                         "message_count": int(r[5]) if r[5] is not None else 0,
-                        "is_archived": bool(r[2])
+                        "is_archived": bool(r[2]),
+                        "user_id": r[6] if len(r) > 6 else "default_user"
                     })
                 return chats
         except Exception as e:

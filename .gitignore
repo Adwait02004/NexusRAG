@@ -14,7 +14,9 @@ venv/
 # Secrets & Environment variables (DO NOT COMMIT)
 .env
 *.env
+.env.local
 !.env.example
+.streamlit/secrets.toml
 
 # Temporary scratch & build artifacts
 scratch/
