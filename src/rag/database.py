@@ -83,7 +83,10 @@ class PostgresVectorDB:
         """Construct secure SQLAlchemy engine with connection pooling and timeout guards."""
         try:
             from sqlalchemy import create_engine
-            from pgvector.sqlalchemy import Vector
+            try:
+                from pgvector.sqlalchemy import Vector
+            except ImportError:
+                pass
             
             # Connection URL
             if self.database_url:
