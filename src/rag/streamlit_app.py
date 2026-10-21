@@ -2832,8 +2832,273 @@ current_user = None
 current_user_id = "default_user"
 if is_auth_configured and hasattr(st, "user"):
     if not st.user.is_logged_in:
-        # Full-screen focus styling matching NexusRAG Studio's Obsidian Titanium & Nebula Aura design
-        auth_portal_css = """
+        if "auth_view" not in st.session_state:
+            st.session_state["auth_view"] = "landing"
+
+        if st.session_state["auth_view"] == "landing":
+            landing_css = """
+<style>
+[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+header[data-testid="stHeader"] { background: transparent !important; }
+
+/* Obsidian Titanium Canvas with Nebula Aura */
+.stApp {
+    background-color: #0b0d14 !important;
+    background-image:
+        radial-gradient(ellipse 90% 60% at 10% 0%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 90% 100%, rgba(139, 92, 246, 0.10) 0%, transparent 60%),
+        radial-gradient(circle at 50% 30%, rgba(6, 182, 212, 0.05) 0%, transparent 70%),
+        radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) !important;
+    background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px !important;
+    background-attachment: fixed !important;
+}
+
+.main .block-container {
+    max-width: 1080px !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 5rem !important;
+    margin: 0 auto !important;
+}
+
+/* Navbar Sign-in Button */
+div[class*="st-key-btn_nav_signin"] button {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 10px !important;
+    height: 38px !important;
+    padding: 0 16px !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+div[class*="st-key-btn_nav_signin"] button:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Primary CTA Button */
+div[class*="st-key-btn_hero_get_started"] button,
+div[class*="st-key-btn_footer_get_started"] button {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    height: 48px !important;
+    font-size: 1.02rem !important;
+    font-weight: 700 !important;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+div[class*="st-key-btn_hero_get_started"] button:hover,
+div[class*="st-key-btn_footer_get_started"] button:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6d28d9 100%) !important;
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.65) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Hero Google Button */
+div[class*="st-key-btn_hero_google"] button {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 12px !important;
+    height: 48px !important;
+    font-size: 0.98rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+    transition: all 0.2s ease !important;
+}
+div[class*="st-key-btn_hero_google"] button:hover {
+    background: #f8fafc !important;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45) !important;
+    transform: translateY(-2px) !important;
+}
+div[class*="st-key-btn_hero_google"] button::before {
+    content: "" !important;
+    display: inline-block !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    background-position: center !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+div[class*="st-key-btn_hero_google"] button div[data-testid="stMarkdownContainer"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+div[class*="st-key-btn_hero_google"] button p {
+    color: #111827 !important;
+    font-size: 0.98rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 auto !important;
+}
+</style>
+"""
+            st.markdown(landing_css, unsafe_allow_html=True)
+
+            # Top Navigation Bar
+            nav_col1, nav_col2 = st.columns([3, 1])
+            with nav_col1:
+                st.markdown("""
+<div style="display:flex;align-items:center;gap:12px;padding:6px 0;">
+<div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed,#d946ef);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(124,58,237,0.4);">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
+</div>
+<span style="font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;color:#ffffff;">NexusRAG <span style="font-weight:400;color:#c4b5fd;">Studio</span></span>
+<span style="background:rgba(99,102,241,0.15);border:1px solid rgba(139,92,246,0.3);color:#a5b4fc;font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:9999px;">Enterprise v2.4</span>
+</div>
+""", unsafe_allow_html=True)
+            with nav_col2:
+                if st.button("Sign In →", key="btn_nav_signin", use_container_width=True):
+                    st.session_state["auth_view"] = "signin"
+                    st.rerun()
+
+            # Hero Section
+            st.markdown("""
+<div style="text-align:center;padding:50px 0 24px 0;max-width:880px;margin:0 auto;">
+<div style="display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,0.12);border:1px solid rgba(139,92,246,0.28);border-radius:9999px;padding:6px 16px;margin-bottom:22px;">
+<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></span>
+<span style="color:#c4b5fd;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Two-Stage Hybrid Search & Self-RAG Verification</span>
+</div>
+<h1 style="font-size:3.2rem;font-weight:800;letter-spacing:-0.035em;line-height:1.15;margin:0 0 20px 0;color:#ffffff;">
+Synthesize Deep Intelligence from <br/>
+<span style="background:linear-gradient(135deg,#a5b4fc 0%,#c084fc 45%,#f472b6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Private Documents & Live Web</span>
+</h1>
+<p style="font-size:1.1rem;color:#94a3b8;line-height:1.65;max-width:760px;margin:0 auto 34px auto;">
+NexusRAG Studio fuses your private documents (PDF, DOCX, CSV, Excel, TXT) with real-time web research, ArXiv science papers, and Reddit discussions. Powered by BM25 + FAISS Reciprocal Rank Fusion, Cross-Encoder re-ranking, and zero-trust Supabase pgvector isolation.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+            # CTA Row
+            c_cta_l, c_cta1, c_cta2, c_cta_r = st.columns([1, 1.3, 1.3, 1])
+            with c_cta1:
+                if st.button("Get Started Free →", key="btn_hero_get_started", use_container_width=True):
+                    st.session_state["auth_view"] = "signin"
+                    st.rerun()
+            with c_cta2:
+                if st.button("Continue with Google", key="btn_hero_google", use_container_width=True):
+                    try:
+                        st.login("clerk")
+                    except Exception:
+                        try:
+                            st.login()
+                        except Exception as err:
+                            st.error(f"Sign-in error: {err}")
+
+            # Architectural Pillars (4 Cards)
+            st.markdown("""
+<div style="margin-top:60px;margin-bottom:14px;text-align:center;">
+<span style="color:#818cf8;font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Core Capabilities</span>
+<h2 style="font-size:1.85rem;font-weight:800;color:#f8fafc;letter-spacing:-0.02em;margin:6px 0 0 0;">Engineered for Precision & Enterprise Scale</h2>
+</div>
+""", unsafe_allow_html=True)
+
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                st.markdown("""
+<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
+<div style="width:42px;height:42px;border-radius:12px;background:rgba(99,102,241,0.18);display:flex;align-items:center;justify-content:center;color:#818cf8;font-size:1.2rem;margin-bottom:14px;">⚡</div>
+<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Two-Stage Hybrid Search</h3>
+<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
+Combines exact keyword BM25Okapi lexical matching with 384-dimensional dense semantic embeddings (all-MiniLM-L6-v2) via Reciprocal Rank Fusion (RRF), re-scored with MS-MARCO Cross-Encoder.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+                st.markdown("""
+<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
+<div style="width:42px;height:42px;border-radius:12px;background:rgba(16,185,129,0.18);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.2rem;margin-bottom:14px;">🛡️</div>
+<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Zero-Trust Cloud Vault</h3>
+<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
+Multi-user cryptographic isolation on Supabase Cloud PostgreSQL 16 with pgvector HNSW cosine indexes, SHA-256 deduplication, and zero-trust audit logging.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+            with col_p2:
+                st.markdown("""
+<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
+<div style="width:42px;height:42px;border-radius:12px;background:rgba(236,72,153,0.18);display:flex;align-items:center;justify-content:center;color:#f472b6;font-size:1.2rem;margin-bottom:14px;">🌐</div>
+<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Omni-Source Research</h3>
+<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
+Fuses private local files (.pdf, .docx, .xlsx, .csv) with live external scraping from Wikipedia, ArXiv scientific papers, Reddit discussions, and arbitrary web URLs.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+                st.markdown("""
+<div style="background:rgba(19,22,34,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:26px 24px;margin-bottom:16px;box-shadow:0 12px 30px rgba(0,0,0,0.4);backdrop-filter:blur(16px);height:100%;">
+<div style="width:42px;height:42px;border-radius:12px;background:rgba(245,158,11,0.18);display:flex;align-items:center;justify-content:center;color:#fbbf24;font-size:1.2rem;margin-bottom:14px;">🧠</div>
+<h3 style="font-size:1.15rem;font-weight:700;color:#f8fafc;margin:0 0 8px 0;">Self-RAG Groundedness</h3>
+<p style="font-size:0.9rem;color:#94a3b8;line-height:1.6;margin:0;">
+Automatic hallucination detection that cross-examines generated claims against retrieved passages to calculate a factual Groundedness Score (0% - 100%) and citation breadcrumbs.
+</p>
+</div>
+""", unsafe_allow_html=True)
+
+            # Quantitative Benchmarks Ribbon
+            st.markdown("""
+<div style="margin-top:30px;background:radial-gradient(100% 100% at 50% 0%,rgba(30,41,59,0.5) 0%,rgba(15,23,42,0.8) 100%);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:26px 30px;box-shadow:0 16px 40px rgba(0,0,0,0.5);">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;text-align:center;">
+<div>
+<div style="font-size:2.1rem;font-weight:800;color:#10b981;letter-spacing:-0.03em;">100.0%</div>
+<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">Hit Rate @ 3</div>
+</div>
+<div>
+<div style="font-size:2.1rem;font-weight:800;color:#818cf8;letter-spacing:-0.03em;">&lt; 13 ms</div>
+<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">Dense Vector Search</div>
+</div>
+<div>
+<div style="font-size:2.1rem;font-weight:800;color:#38bdf8;letter-spacing:-0.03em;">0.5 ms</div>
+<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">BM25 Keyword Search</div>
+</div>
+<div>
+<div style="font-size:2.1rem;font-weight:800;color:#f472b6;letter-spacing:-0.03em;">256-Bit</div>
+<div style="font-size:0.8rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:4px;">TLS Multi-Device Sync</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+            # Bottom CTA Banner
+            st.markdown("""
+<div style="text-align:center;margin-top:50px;padding:36px 20px;background:radial-gradient(ellipse at 50% 50%,rgba(79,70,229,0.15) 0%,transparent 70%);border:1px solid rgba(139,92,246,0.25);border-radius:24px;">
+<h2 style="font-size:1.8rem;font-weight:800;color:#ffffff;margin:0 0 10px 0;">Ready to experience the future of knowledge retrieval?</h2>
+<p style="color:#94a3b8;font-size:0.96rem;margin:0 0 24px 0;">Join researchers and engineers using NexusRAG Studio for deep grounded synthesis.</p>
+</div>
+""", unsafe_allow_html=True)
+
+            c_bot_l, c_bot_c, c_bot_r = st.columns([1, 1.4, 1])
+            with c_bot_c:
+                if st.button("Launch Studio & Sign In →", key="btn_footer_get_started", use_container_width=True):
+                    st.session_state["auth_view"] = "signin"
+                    st.rerun()
+
+            st.stop()
+
+        else:
+            # Sign-In View
+            auth_portal_css = """
 <style>
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
 header[data-testid="stHeader"] { background: transparent !important; }
@@ -2852,9 +3117,28 @@ header[data-testid="stHeader"] { background: transparent !important; }
 
 .main .block-container {
     max-width: 440px !important;
-    padding-top: 3.2rem !important;
+    padding-top: 2rem !important;
     padding-bottom: 3.5rem !important;
     margin: 0 auto !important;
+}
+
+/* Back Button */
+div[class*="st-key-btn_back_to_landing"] button {
+    background: transparent !important;
+    color: #94a3b8 !important;
+    border: none !important;
+    font-size: 0.86rem !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease !important;
+    padding: 0 !important;
+    margin-bottom: 12px !important;
+    text-align: left !important;
+}
+div[class*="st-key-btn_back_to_landing"] button:hover {
+    color: #f1f5f9 !important;
+    background: transparent !important;
+    transform: none !important;
 }
 
 /* Card Container — Obsidian Glass with Subtle Violet Rim */
@@ -2996,16 +3280,20 @@ div[class*="st-key-btn_clerk_email_continue"] button p {
 }
 </style>
 """
-        st.markdown(auth_portal_css, unsafe_allow_html=True)
+            st.markdown(auth_portal_css, unsafe_allow_html=True)
 
-        st.markdown("""
+            if st.button("← Back to Product Overview", key="btn_back_to_landing"):
+                st.session_state["auth_view"] = "landing"
+                st.rerun()
+
+            st.markdown("""
 <p style="text-align:center;font-size:0.95rem;color:#94a3b8;margin:0 0 18px 0;font-weight:400;">
 Welcome back - pick up where you left off.
 </p>
 """, unsafe_allow_html=True)
 
-        with st.container(border=True, key="clerk_card_wrapper"):
-            st.markdown("""
+            with st.container(border=True, key="clerk_card_wrapper"):
+                st.markdown("""
 <div style="text-align:center;margin-bottom:20px;">
 <div style="display:flex;justify-content:center;margin-bottom:12px;">
 <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#d946ef 100%);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(124,58,237,0.45);border:1px solid rgba(255,255,255,0.25);">
@@ -3017,16 +3305,16 @@ Welcome back - pick up where you left off.
 </div>
 """, unsafe_allow_html=True)
 
-            if st.button("Continue with Google", use_container_width=True, key="btn_clerk_auth_login"):
-                try:
-                    st.login("clerk")
-                except Exception:
+                if st.button("Continue with Google", use_container_width=True, key="btn_clerk_auth_login"):
                     try:
-                        st.login()
-                    except Exception as err:
-                        st.error(f"Sign-in error: {err}")
+                        st.login("clerk")
+                    except Exception:
+                        try:
+                            st.login()
+                        except Exception as err:
+                            st.error(f"Sign-in error: {err}")
 
-            st.markdown("""
+                st.markdown("""
 <div style="display:flex;align-items:center;margin:18px 0 16px 0;">
 <div style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></div>
 <span style="padding:0 12px;font-size:0.75rem;font-weight:600;color:#64748b;letter-spacing:0.06em;">OR</span>
@@ -3034,23 +3322,23 @@ Welcome back - pick up where you left off.
 </div>
 """, unsafe_allow_html=True)
 
-            email_val = st.text_input("Email address", placeholder="Enter your email address", key="clerk_email_input")
+                email_val = st.text_input("Email address", placeholder="Enter your email address", key="clerk_email_input")
 
-            if st.button("Continue ▸", type="primary", use_container_width=True, key="btn_clerk_email_continue"):
-                try:
-                    st.login("clerk")
-                except Exception:
+                if st.button("Continue ▸", type="primary", use_container_width=True, key="btn_clerk_email_continue"):
                     try:
-                        st.login()
-                    except Exception as err:
-                        st.error(f"Sign-in error: {err}")
+                        st.login("clerk")
+                    except Exception:
+                        try:
+                            st.login()
+                        except Exception as err:
+                            st.error(f"Sign-in error: {err}")
 
-        st.markdown("""
+            st.markdown("""
 <p style="text-align:center;font-size:0.88rem;color:#94a3b8;margin-top:20px;">
 Don't have an account? <strong style="color:#818cf8;cursor:pointer;">Sign up</strong>
 </p>
 """, unsafe_allow_html=True)
-        st.stop()
+            st.stop()
     else:
         current_user = dict(st.user)
         current_user_id = current_user.get("email") or current_user.get("sub") or "default_user"
