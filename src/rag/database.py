@@ -408,18 +408,20 @@ class PostgresVectorDB:
         except Exception as e:
             logger.warning(f"Failed to save chat session to PostgreSQL: {e}")
 
-    def load_chat_session(self, chat_id: str) -> Optional[Dict[str, Any]]:
-        """Load chat session from PostgreSQL / Supabase."""
+    def load_chat_session(self, chat_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Load chat session from PostgreSQL / Supabase with strict user isolation."""
         if not self.is_connected:
             return None
         from sqlalchemy import text
         import time
         try:
             with self.engine.connect() as conn:
-                row = conn.execute(text("""
-                    SELECT id, title, messages, is_archived, created_at, updated_at
-                    FROM chat_sessions WHERE id = :id;
-                """), {"id": chat_id}).fetchone()
+                query = "SELECT id, title, messages, is_archived, created_at, updated_at, user_id FROM chat_sessions WHERE id = :id"
+                params = {"id": chat_id}
+                if user_id:
+                    query += " AND user_id = :user_id"
+                    params["user_id"] = user_id
+                row = conn.execute(text(query), params).fetchone()
                 if row:
                     msgs = row[2] if isinstance(row[2], list) else json.loads(row[2])
                     return {
@@ -428,14 +430,15 @@ class PostgresVectorDB:
                         "messages": msgs,
                         "is_archived": bool(row[3]),
                         "created_at": row[4].timestamp() if row[4] else time.time(),
-                        "updated_at": row[5].timestamp() if row[5] else time.time()
+                        "updated_at": row[5].timestamp() if row[5] else time.time(),
+                        "user_id": row[6] if len(row) > 6 else user_id
                     }
         except Exception as e:
             logger.warning(f"Failed to load chat session from PostgreSQL: {e}")
         return None
 
     def list_chat_sessions(self, include_archived: bool = False, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        """List chat sessions from PostgreSQL / Supabase with user scoping."""
+        """List chat sessions from PostgreSQL / Supabase with strict user scoping."""
         if not self.is_connected:
             return []
         from sqlalchemy import text
@@ -446,7 +449,7 @@ class PostgresVectorDB:
                 if not include_archived:
                     query += " AND is_archived = FALSE"
                 if user_id:
-                    query += " AND (user_id = :user_id OR user_id = 'default_user' OR user_id IS NULL)"
+                    query += " AND user_id = :user_id"
                     params["user_id"] = user_id
                 query += " ORDER BY updated_at DESC;"
                 rows = conn.execute(text(query), params).fetchall()
@@ -459,7 +462,7 @@ class PostgresVectorDB:
                         "updated_at": r[4].timestamp() if r[4] else 0,
                         "message_count": int(r[5]) if r[5] is not None else 0,
                         "is_archived": bool(r[2]),
-                        "user_id": r[6] if len(r) > 6 else "default_user"
+                        "user_id": r[6] if len(r) > 6 else user_id
                     })
                 return chats
         except Exception as e:
@@ -482,14 +485,19 @@ class PostgresVectorDB:
             logger.warning(f"Failed to set chat archive state in PostgreSQL: {e}")
             return False
 
-    def delete_chat_session(self, chat_id: str) -> bool:
-        """Delete chat session from PostgreSQL / Supabase."""
+    def delete_chat_session(self, chat_id: str, user_id: Optional[str] = None) -> bool:
+        """Delete chat session from PostgreSQL / Supabase with strict user isolation."""
         if not self.is_connected:
             return False
         from sqlalchemy import text
         try:
             with self.engine.begin() as conn:
-                conn.execute(text("DELETE FROM chat_sessions WHERE id = :id;"), {"id": chat_id})
+                query = "DELETE FROM chat_sessions WHERE id = :id"
+                params = {"id": chat_id}
+                if user_id:
+                    query += " AND user_id = :user_id"
+                    params["user_id"] = user_id
+                conn.execute(text(query), params)
             return True
         except Exception as e:
             logger.warning(f"Failed to delete chat session from PostgreSQL: {e}")

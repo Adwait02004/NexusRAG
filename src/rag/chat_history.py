@@ -115,6 +115,9 @@ class ChatHistoryManager:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                    file_user_id = data.get("user_id")
+                    if self.user_id and file_user_id and file_user_id != self.user_id:
+                        continue
                     is_archived = data.get("is_archived", False)
                     if not include_archived and is_archived:
                         continue
@@ -124,7 +127,8 @@ class ChatHistoryManager:
                         "created_at": data.get("created_at", file_path.stat().st_ctime),
                         "updated_at": data.get("updated_at", file_path.stat().st_mtime),
                         "message_count": len(data.get("messages", [])),
-                        "is_archived": is_archived
+                        "is_archived": is_archived,
+                        "user_id": file_user_id
                     })
             except Exception as e:
                 print(f"[WARN] Failed to read chat history {file_path.name}: {e}")
@@ -162,13 +166,17 @@ class ChatHistoryManager:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                    file_user_id = data.get("user_id")
+                    if self.user_id and file_user_id and file_user_id != self.user_id:
+                        continue
                     if data.get("is_archived", False):
                         archived.append({
                             "id": data.get("id", file_path.stem),
                             "title": data.get("title", "Untitled Chat"),
                             "created_at": data.get("created_at", file_path.stat().st_ctime),
                             "updated_at": data.get("updated_at", file_path.stat().st_mtime),
-                            "message_count": len(data.get("messages", []))
+                            "message_count": len(data.get("messages", [])),
+                            "user_id": file_user_id
                         })
             except Exception as e:
                 print(f"[WARN] Failed to read archived chat {file_path.name}: {e}")
@@ -221,11 +229,11 @@ class ChatHistoryManager:
         return bool(self.pg_db and self.pg_db.is_connected)
 
     def load_chat(self, chat_id: str) -> Optional[Dict[str, Any]]:
-        """Load messages and metadata for a specific chat."""
+        """Load messages and metadata for a specific chat with strict user isolation."""
         # 1. Try cloud database first
         if self.pg_db and self.pg_db.is_connected:
             try:
-                cloud_data = self.pg_db.load_chat_session(chat_id)
+                cloud_data = self.pg_db.load_chat_session(chat_id, user_id=self.user_id)
                 if cloud_data:
                     return cloud_data
             except Exception as e:
@@ -237,7 +245,11 @@ class ChatHistoryManager:
             return None
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                file_user_id = data.get("user_id")
+                if self.user_id and file_user_id and file_user_id != self.user_id:
+                    return None
+                return data
         except Exception as e:
             print(f"[ERROR] Failed to load chat {chat_id}: {e}")
             return None
@@ -312,11 +324,11 @@ class ChatHistoryManager:
                 temp_path.unlink()
 
     def delete_chat(self, chat_id: str) -> bool:
-        """Delete a saved chat history file."""
+        """Delete a saved chat history file with strict user isolation."""
         ChatHistoryManager._cached_chats.pop(self.user_id, None)
         ChatHistoryManager._cached_archived_chats.pop(self.user_id, None)
         if self.pg_db and self.pg_db.is_connected:
-            self.pg_db.delete_chat_session(chat_id)
+            self.pg_db.delete_chat_session(chat_id, user_id=self.user_id)
 
         file_path = self.storage_dir / f"{chat_id}.json"
         if file_path.exists():

@@ -2950,7 +2950,7 @@ Sign in with your Google account to access your private neural knowledge vault, 
         st.stop()
     else:
         current_user = dict(st.user)
-        current_user_id = current_user.get("sub") or current_user.get("email") or "default_user"
+        current_user_id = current_user.get("email") or current_user.get("sub") or "default_user"
 
 
 # ─── Chat History Manager ─── #
