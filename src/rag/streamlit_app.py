@@ -994,7 +994,7 @@ div[data-testid="stHorizontalBlock"] .stButton > button {
     margin-bottom: 12px !important;
 }
 
-div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_auth_login"]) .stButton > button::before {
+div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_"]) .stButton > button::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1006,7 +1006,7 @@ div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_auth_logi
     transition: opacity 0.25s ease;
 }
 
-div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_auth_login"]) .stButton > button:hover {
+div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_"]) .stButton > button:hover {
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08)) !important;
     border-color: rgba(99, 102, 241, 0.45) !important;
     transform: translateY(-3px) !important;
@@ -1014,7 +1014,7 @@ div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_auth_logi
     color: #ffffff !important;
 }
 
-div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_auth_login"]) .stButton > button:hover::before {
+div[data-testid="stHorizontalBlock"] div:not([class*="st-key-btn_clerk_"]) .stButton > button:hover::before {
     opacity: 1 !important;
 }
 
@@ -2832,141 +2832,180 @@ current_user = None
 current_user_id = "default_user"
 if is_auth_configured and hasattr(st, "user"):
     if not st.user.is_logged_in:
-        # Full-screen focus styling for the authentication portal
+        # Full-screen focus styling for the authentication portal matching the Clerk design
         auth_portal_css = """
 <style>
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none !important; }
 header[data-testid="stHeader"] { background: transparent !important; }
+
+/* Light dot-grid canvas matching the design */
+.stApp {
+    background-color: #fafbfc !important;
+    background-image: radial-gradient(#d1d5db 1.2px, transparent 1.2px) !important;
+    background-size: 24px 24px !important;
+}
+
 .main .block-container {
-    max-width: 580px !important;
-    padding-top: 3.5rem !important;
+    max-width: 440px !important;
+    padding-top: 3.2rem !important;
     padding-bottom: 3.5rem !important;
     margin: 0 auto !important;
 }
-/* Official Google Sign-In Button Styling */
-div[class*="st-key-btn_clerk_auth_login"] button,
-div[data-testid="stHorizontalBlock"] div[class*="st-key-btn_clerk_auth_login"] button,
-div[data-testid="stButton"] button[kind="primary"] {
+
+/* Card Container */
+div[class*="st-key-clerk_card_wrapper"],
+div[data-testid="stVerticalBlockBorderWrapper"]:has(div[class*="st-key-clerk_card_wrapper"]) {
     background: #ffffff !important;
-    color: #1f2937 !important;
-    border: 1px solid #dadce0 !important;
-    border-radius: 14px !important;
-    padding: 0.8rem 1.6rem !important;
-    font-size: 1.02rem !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 22px !important;
+    padding: 30px 28px 28px 28px !important;
+    box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Continue with Google Button */
+div[class*="st-key-btn_clerk_auth_login"] button {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    font-size: 0.94rem !important;
     font-weight: 600 !important;
-    display: inline-flex !important;
+    display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.2) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    gap: 8px !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer !important;
 }
 
-div[class*="st-key-btn_clerk_auth_login"] button:hover,
-div[data-testid="stHorizontalBlock"] div[class*="st-key-btn_clerk_auth_login"] button:hover,
-div[data-testid="stButton"] button[kind="primary"]:hover {
-    background: #f8fafc !important;
-    color: #111827 !important;
-    border-color: #cbd5e1 !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+div[class*="st-key-btn_clerk_auth_login"] button:hover {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    transform: none !important;
 }
 
-/* Official Google 4-Color "G" Icon — ALWAYS VISIBLE PERMANENTLY, NEVER HIDDEN OR HOVER-DEPENDENT */
-div[class*="st-key-btn_clerk_auth_login"] button::before,
-div[data-testid="stHorizontalBlock"] div[class*="st-key-btn_clerk_auth_login"] button::before,
-div[data-testid="stHorizontalBlock"] div[class*="st-key-btn_clerk_auth_login"] .stButton > button::before,
-div[data-testid="stButton"] button[kind="primary"]::before {
+/* Official Google "G" 4-color Logo permanently visible */
+div[class*="st-key-btn_clerk_auth_login"] button::before {
     content: "" !important;
     display: inline-block !important;
     position: static !important;
-    width: 22px !important;
-    height: 22px !important;
-    min-width: 22px !important;
-    min-height: 22px !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-size: contain !important;
     background-position: center !important;
     opacity: 1 !important;
     visibility: visible !important;
+    margin-right: 8px !important;
     flex-shrink: 0 !important;
-    top: auto !important;
-    left: auto !important;
-    right: auto !important;
-    margin: 0 !important;
-    transition: none !important;
-}
-
-div[class*="st-key-btn_clerk_auth_login"] button:hover::before,
-div[data-testid="stHorizontalBlock"] div[class*="st-key-btn_clerk_auth_login"] button:hover::before,
-div[data-testid="stHorizontalBlock"] div[class*="st-key-btn_clerk_auth_login"] .stButton > button:hover::before,
-div[data-testid="stButton"] button[kind="primary"]:hover::before {
-    opacity: 1 !important;
-    visibility: visible !important;
 }
 
 div[class*="st-key-btn_clerk_auth_login"] button p {
-    color: #1f2937 !important;
-    font-size: 1.02rem !important;
+    color: #111827 !important;
+    font-size: 0.94rem !important;
     font-weight: 600 !important;
     margin: 0 !important;
 }
 
-div[data-testid="stButton"] button[kind="primary"] span[data-testid="stIconMaterial"] {
-    display: none !important;
+/* Email Input Field & Label */
+div[class*="st-key-clerk_email_input"] label p {
+    color: #111827 !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 4px !important;
+}
+div[class*="st-key-clerk_email_input"] input {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 10px !important;
+    height: 44px !important;
+    padding: 0 14px !important;
+    font-size: 0.92rem !important;
+    box-shadow: none !important;
+}
+div[class*="st-key-clerk_email_input"] input::placeholder {
+    color: #9ca3af !important;
+}
+div[class*="st-key-clerk_email_input"] input:focus {
+    border-color: #111827 !important;
+    box-shadow: 0 0 0 1px #111827 !important;
+}
+
+/* Continue ▸ Dark Button */
+div[class*="st-key-btn_clerk_email_continue"] button {
+    background: #18181b !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    font-size: 0.94rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+    transition: background 0.15s ease !important;
+    cursor: pointer !important;
+}
+div[class*="st-key-btn_clerk_email_continue"] button:hover {
+    background: #27272a !important;
+    color: #ffffff !important;
+    transform: none !important;
+}
+div[class*="st-key-btn_clerk_email_continue"] button p {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.94rem !important;
+    margin: 0 !important;
 }
 </style>
 """
         st.markdown(auth_portal_css, unsafe_allow_html=True)
 
-        auth_card_html = """
-<div style="position:relative;background:radial-gradient(120% 120% at 50% 0%,rgba(30,41,59,0.85) 0%,rgba(15,23,42,0.95) 100%);border:1px solid rgba(255,255,255,0.12);border-radius:26px;padding:38px 32px 30px 32px;box-shadow:0 30px 90px -20px rgba(0,0,0,0.8),0 0 50px -15px rgba(99,102,241,0.25);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);text-align:center;overflow:hidden;margin-bottom:20px;">
-<div style="position:absolute;top:0;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,#6366f1,#a855f7,#ec4899,transparent);"></div>
-<div style="width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#d946ef 100%);display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px;box-shadow:0 12px 35px rgba(124,58,237,0.5);border:1px solid rgba(255,255,255,0.25);">
-<svg width="36" height="36" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
-</div>
-<div style="margin-bottom:14px;">
-<span style="display:inline-flex;align-items:center;gap:7px;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#c4b5fd;background:rgba(139,92,246,0.15);border:1px solid rgba(167,139,250,0.28);border-radius:9999px;padding:4px 13px;">
-<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></span>
-Enterprise Intelligence Platform
-</span>
-</div>
-<h1 style="font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;margin:0 0 8px 0;background:linear-gradient(135deg,#ffffff 0%,#f1f5f9 60%,#cbd5e1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">NexusRAG Studio</h1>
-<p style="color:#94a3b8;font-size:0.92rem;line-height:1.55;max-width:460px;margin:0 auto 24px auto;">
-Sign in with your Google account to access your private neural knowledge vault, cloud-synced chats, and hybrid retrieval engine.
+        st.markdown("""
+<p style="text-align:center;font-size:0.95rem;color:#64748b;margin:0 0 18px 0;font-weight:400;">
+Welcome back - pick up where you left off.
 </p>
-<div style="display:flex;flex-direction:column;gap:9px;text-align:left;margin-bottom:6px;">
-<div style="display:flex;align-items:center;gap:12px;background:rgba(15,23,42,0.65);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:11px 15px;">
-<div style="width:30px;height:30px;border-radius:9px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;color:#10b981;font-size:0.95rem;flex-shrink:0;">&#9889;</div>
-<div style="display:flex;flex-direction:column;">
-<span style="font-size:0.84rem;font-weight:600;color:#f1f5f9;">Hybrid RAG Pipeline</span>
-<span style="font-size:0.74rem;color:#94a3b8;">BM25 Lexical + FAISS Dense Vector + Cross-Encoder Reranking</span>
-</div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;background:rgba(15,23,42,0.65);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:11px 15px;">
-<div style="width:30px;height:30px;border-radius:9px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;color:#818cf8;font-size:0.95rem;flex-shrink:0;">&#128274;</div>
-<div style="display:flex;flex-direction:column;">
-<span style="font-size:0.84rem;font-weight:600;color:#f1f5f9;">Zero-Trust User Vault</span>
-<span style="font-size:0.74rem;color:#94a3b8;">Private multi-user isolation on Supabase PostgreSQL pgvector</span>
-</div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;background:rgba(15,23,42,0.65);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:11px 15px;">
-<div style="width:30px;height:30px;border-radius:9px;background:rgba(236,72,153,0.15);display:flex;align-items:center;justify-content:center;color:#f472b6;font-size:0.95rem;flex-shrink:0;">&#127760;</div>
-<div style="display:flex;flex-direction:column;">
-<span style="font-size:0.84rem;font-weight:600;color:#f1f5f9;">Live Grounded Reasoning</span>
-<span style="font-size:0.74rem;color:#94a3b8;">Multi-step decomposition with real-time web citations</span>
-</div>
-</div>
-</div>
-</div>
-"""
-        st.markdown(auth_card_html, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-        col_c1, col_c2, col_c3 = st.columns([1, 2.4, 1])
-        with col_c2:
-            if st.button("Continue with Google", type="primary", use_container_width=True, key="btn_clerk_auth_login"):
+        with st.container(border=True, key="clerk_card_wrapper"):
+            st.markdown("""
+<div style="text-align:center;margin-bottom:20px;">
+<h2 style="font-size:1.65rem;font-weight:800;color:#111827;letter-spacing:-0.03em;margin:0 0 6px 0;">Sign in to Skilotech</h2>
+<p style="font-size:0.92rem;color:#6b7280;margin:0;font-weight:400;">Welcome back! Please sign in to continue</p>
+</div>
+""", unsafe_allow_html=True)
+
+            if st.button("Continue with Google", use_container_width=True, key="btn_clerk_auth_login"):
+                try:
+                    st.login("clerk")
+                except Exception:
+                    try:
+                        st.login()
+                    except Exception as err:
+                        st.error(f"Sign-in error: {err}")
+
+            st.markdown("""
+<div style="display:flex;align-items:center;margin:18px 0 16px 0;">
+<div style="flex:1;height:1px;background:#e5e7eb;"></div>
+<span style="padding:0 12px;font-size:0.75rem;font-weight:600;color:#9ca3af;letter-spacing:0.06em;">OR</span>
+<div style="flex:1;height:1px;background:#e5e7eb;"></div>
+</div>
+""", unsafe_allow_html=True)
+
+            email_val = st.text_input("Email address", placeholder="Enter your email address", key="clerk_email_input")
+
+            if st.button("Continue ▸", type="primary", use_container_width=True, key="btn_clerk_email_continue"):
                 try:
                     st.login("clerk")
                 except Exception:
@@ -2976,13 +3015,9 @@ Sign in with your Google account to access your private neural knowledge vault, 
                         st.error(f"Sign-in error: {err}")
 
         st.markdown("""
-<div style="text-align:center;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.75rem;color:#64748b;">
-<span>Secured with <strong>Clerk Identity</strong></span>
-<span>&bull;</span>
-<span>256-Bit TLS</span>
-<span>&bull;</span>
-<span>Multi-Device Sync</span>
-</div>
+<p style="text-align:center;font-size:0.88rem;color:#6b7280;margin-top:20px;">
+Don't have an account? <strong style="color:#111827;">Sign up</strong>
+</p>
 """, unsafe_allow_html=True)
         st.stop()
     else:
