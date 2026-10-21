@@ -2884,7 +2884,7 @@ div[class*="st-key-btn_clerk_auth_login"] button {
     flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 0px !important;
+    gap: 10px !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
     transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
     cursor: pointer !important;
@@ -2912,13 +2912,19 @@ div[class*="st-key-btn_clerk_auth_login"] button::before {
     background-position: center !important;
     opacity: 1 !important;
     visibility: visible !important;
-    margin: 0 6px 0 0 !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
     flex-shrink: 0 !important;
 }
 
-div[class*="st-key-btn_clerk_auth_login"] button div[data-testid="stMarkdownContainer"] {
+div[class*="st-key-btn_clerk_auth_login"] button div[data-testid="stMarkdownContainer"],
+div[class*="st-key-btn_clerk_auth_login"] button div {
     display: inline-flex !important;
     align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: fit-content !important;
     padding: 0 !important;
     margin: 0 !important;
 }
@@ -2929,6 +2935,9 @@ div[class*="st-key-btn_clerk_auth_login"] button p {
     font-weight: 600 !important;
     margin: 0 !important;
     padding: 0 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    text-align: left !important;
 }
 
 /* Email Input Field & Label */
