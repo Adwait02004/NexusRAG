@@ -17,17 +17,21 @@ logger = logging.getLogger("NexusRAG.Database")
 
 def _resolve_config(key: str, default: Any = None) -> Any:
     """Resolve configuration from os.environ first, then fallback to st.secrets."""
-    val = os.getenv(key)
-    if val is not None and str(val).strip():
-        return val
+    for k in [key, key.upper(), key.lower()]:
+        val = os.getenv(k)
+        if val is not None and str(val).strip():
+            return val
     try:
         import streamlit as st
         if hasattr(st, "secrets"):
-            if key in st.secrets:
-                return st.secrets[key]
-            for sec in ["postgres", "supabase", "database"]:
-                if sec in st.secrets and key in st.secrets[sec]:
-                    return st.secrets[sec][key]
+            for k in [key, key.upper(), key.lower()]:
+                if k in st.secrets:
+                    return st.secrets[k]
+            for sec in ["postgres", "supabase", "database", "POSTGRES", "SUPABASE"]:
+                if sec in st.secrets:
+                    for k in [key, key.upper(), key.lower()]:
+                        if k in st.secrets[sec]:
+                            return st.secrets[sec][k]
     except Exception:
         pass
     return default

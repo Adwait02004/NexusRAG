@@ -40,8 +40,10 @@ try:
                 if isinstance(v, dict) or hasattr(v, "items"):
                     _unpack_secrets(v)
                 else:
-                    if k not in os.environ or not os.environ[k]:
-                        os.environ[k] = str(v)
+                    val_str = str(v)
+                    os.environ[k] = val_str
+                    os.environ[k.upper()] = val_str
+                    os.environ[k.lower()] = val_str
         _unpack_secrets(st.secrets)
 except Exception:
     pass

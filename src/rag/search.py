@@ -125,7 +125,15 @@ class RAGSearch:
             print(f"[INFO] SQLite auto-sync notice: {e_sql_sync}")
 
         # Initialize PostgreSQL Vector Database connection only if configured (avoids connection timeout delay)
-        has_pg_config = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRES_HOST") or os.getenv("ENABLE_POSTGRES") == "true")
+        keys_to_check = ["DATABASE_URL", "POSTGRES_URL", "POSTGRES_HOST", "database_url", "postgres_url", "postgres_host"]
+        has_pg_config = any(os.getenv(k) for k in keys_to_check) or os.getenv("ENABLE_POSTGRES") == "true"
+        if not has_pg_config:
+            try:
+                import streamlit as st
+                if hasattr(st, "secrets"):
+                    has_pg_config = any(k in st.secrets for k in keys_to_check + ["postgres", "supabase"])
+            except Exception:
+                pass
         if has_pg_config:
             try:
                 from rag.database import PostgresVectorDB

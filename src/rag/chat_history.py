@@ -33,12 +33,13 @@ class ChatHistoryManager:
         self.pg_db = pg_db or kwargs.get("pg_db") or (args[0] if args else None)
 
         # Auto-connect to PostgreSQL / Supabase if environment variables or secrets exist
-        has_pg = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_URL"))
+        keys_to_check = ["DATABASE_URL", "POSTGRES_HOST", "POSTGRES_URL", "database_url", "postgres_host", "postgres_url"]
+        has_pg = any(os.getenv(k) for k in keys_to_check)
         if not has_pg:
             try:
                 import streamlit as st
-                if hasattr(st, "secrets") and ("POSTGRES_HOST" in st.secrets or "DATABASE_URL" in st.secrets or "postgres" in st.secrets or "supabase" in st.secrets):
-                    has_pg = True
+                if hasattr(st, "secrets"):
+                    has_pg = any(k in st.secrets for k in keys_to_check + ["postgres", "supabase"])
             except Exception:
                 pass
 
