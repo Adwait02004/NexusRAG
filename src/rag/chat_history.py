@@ -32,8 +32,17 @@ class ChatHistoryManager:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.pg_db = pg_db or kwargs.get("pg_db") or (args[0] if args else None)
 
-        # Auto-connect to PostgreSQL / Supabase if environment variables exist
-        if self.pg_db is None and (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_URL")):
+        # Auto-connect to PostgreSQL / Supabase if environment variables or secrets exist
+        has_pg = bool(os.getenv("DATABASE_URL") or os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_URL"))
+        if not has_pg:
+            try:
+                import streamlit as st
+                if hasattr(st, "secrets") and ("POSTGRES_HOST" in st.secrets or "DATABASE_URL" in st.secrets or "postgres" in st.secrets or "supabase" in st.secrets):
+                    has_pg = True
+            except Exception:
+                pass
+
+        if self.pg_db is None and has_pg:
             try:
                 from rag.database import PostgresVectorDB
                 cand = PostgresVectorDB()

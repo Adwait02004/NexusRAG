@@ -6,8 +6,31 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import numpy as np
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 # Configure logging
 logger = logging.getLogger("NexusRAG.Database")
+
+def _resolve_config(key: str, default: Any = None) -> Any:
+    """Resolve configuration from os.environ first, then fallback to st.secrets."""
+    val = os.getenv(key)
+    if val is not None and str(val).strip():
+        return val
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            if key in st.secrets:
+                return st.secrets[key]
+            for sec in ["postgres", "supabase", "database"]:
+                if sec in st.secrets and key in st.secrets[sec]:
+                    return st.secrets[sec][key]
+    except Exception:
+        pass
+    return default
 
 class PostgresVectorDB:
     """
@@ -33,12 +56,12 @@ class PostgresVectorDB:
         sslmode: Optional[str] = None,
         database_url: Optional[str] = None
     ):
-        self.database_url = database_url or os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
-        self.host = host or os.getenv("POSTGRES_HOST", "localhost")
-        self.port = int(port or os.getenv("POSTGRES_PORT", 5432))
-        self.database = database or os.getenv("POSTGRES_DB", "postgres")
-        self.user = user or os.getenv("POSTGRES_USER", "postgres")
-        self.password = password or os.getenv("POSTGRES_PASSWORD", "")
+        self.database_url = database_url or _resolve_config("DATABASE_URL") or _resolve_config("POSTGRES_URL")
+        self.host = host or _resolve_config("POSTGRES_HOST", "localhost")
+        self.port = int(port or _resolve_config("POSTGRES_PORT", 5432))
+        self.database = database or _resolve_config("POSTGRES_DB", "postgres")
+        self.user = user or _resolve_config("POSTGRES_USER", "postgres")
+        self.password = password or _resolve_config("POSTGRES_PASSWORD", "")
         
         # Auto-detect SSL: Cloud providers like Supabase require sslmode=require
         if sslmode:

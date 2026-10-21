@@ -35,9 +35,14 @@ try:
     load_dotenv(PROJECT_DIR / ".env")
     load_dotenv()
     if hasattr(st, "secrets"):
-        for k, v in st.secrets.items():
-            if isinstance(v, (str, int, float, bool)) and k not in os.environ:
-                os.environ[k] = str(v)
+        def _unpack_secrets(d):
+            for k, v in d.items():
+                if isinstance(v, dict) or hasattr(v, "items"):
+                    _unpack_secrets(v)
+                else:
+                    if k not in os.environ or not os.environ[k]:
+                        os.environ[k] = str(v)
+        _unpack_secrets(st.secrets)
 except Exception:
     pass
 
