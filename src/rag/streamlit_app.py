@@ -2769,6 +2769,9 @@ active_docs = stats.get("documents", [])
 doc_count = len(active_docs)
 total_chunks = stats.get("total_chunks", 0)
 
+is_pg_live = bool(hasattr(rag, "pg_db") and rag.pg_db and rag.pg_db.is_connected)
+curr_db_label = "pgvector (Connected)" if is_pg_live else "FAISS (Local)"
+
 
 def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None, attached_docs=None):
     """Safely invoke search_context handling any in-flight module caching gracefully."""
@@ -2861,7 +2864,7 @@ def open_library_dialog():
     stats = rag.vectorstore.get_stats()
     docs = stats.get("documents", [])
     total_chunks = stats.get("total_chunks", 0)
-    st.caption(f"{len(docs)} Documents &middot; {total_chunks:,} Chunks Indexed (FAISS + BM25)")
+    st.caption(f"{len(docs)} Documents &middot; {total_chunks:,} Chunks Indexed ({curr_db_label} + BM25)")
     if not docs:
         st.info("No documents indexed yet. Use 'Images' or '+' to add documents.")
     else:
@@ -2898,27 +2901,7 @@ def open_explore_dialog():
 # ███  1. SIDEBAR (Clean, Minimalist ChatGPT Styling)  ████████████████
 # =====================================================================
 with st.sidebar:
-    # ── Top Brand Header & Status Pills (Moved from Main UI) ──
-    web_on = st.session_state.get("sb_web_search", True)
-    rerank_on = st.session_state.get("sb_use_reranker", True)
-    if web_on and rerank_on:
-        curr_pipeline = "Omni-Source RAG"
-    elif web_on:
-        curr_pipeline = "Docs + Web"
-    elif rerank_on:
-        curr_pipeline = "Two-Stage RAG"
-    else:
-        curr_pipeline = "Direct RAG"
-
-    is_pg_live = bool(hasattr(rag, "pg_db") and rag.pg_db and rag.pg_db.is_connected)
-    curr_db_label = "pgvector (Connected)" if is_pg_live else "FAISS & pgvector"
-
-    active_model_disp = "GPT-OSS"
-    if "sb_model_name" in st.session_state:
-        active_model_disp = st.session_state["sb_model_name"].split(" ")[0]
-    elif AVAILABLE_MODELS:
-        active_model_disp = AVAILABLE_MODELS[0]["name"].split(" ")[0]
-
+    # ── Top Brand Header ──
     col_hdr_brand, col_hdr_theme = st.columns([8.2, 1.8])
     with col_hdr_brand:
         st.markdown(f"""
@@ -2926,7 +2909,6 @@ with st.sidebar:
                 <div class="hdr-icon" style="width:34px; height:34px; min-width:34px; border-radius:10px;">{SVG_SPARK.format(w=16, h=16)}</div>
                 <div class="sb-brand-text">
                     <div class="hdr-title" style="font-size: 1.05rem; line-height: 1.2;">NexusRAG Studio</div>
-                    <div class="hdr-sub" style="font-size: 0.68rem; line-height: 1.2;">Document Intelligence Platform</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -2940,17 +2922,7 @@ with st.sidebar:
             st.session_state["sb_theme_select"] = "Pure Light" if new_mode == "light" else "Dark Obsidian"
             st.rerun()
 
-    # ── Status Pills Row in Sidebar ──
-    st.markdown(f"""
-        <div class="sb-pills-row">
-            <div class="pill pill-live" style="font-size: 0.66rem; padding: 3px 8px;">
-                <span class="live-dot" style="width: 5px; height: 5px;"></span>
-                <span>{curr_pipeline}</span>
-            </div>
-            <div class="pill pill-info" style="font-size: 0.66rem; padding: 3px 8px;">{curr_db_label}</div>
-            <div class="pill pill-info" style="font-size: 0.66rem; padding: 3px 8px;">{active_model_disp}</div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
 
     # ── New chat Pill Button ──
     if st.button("New chat", icon=":material/edit_square:", key="btn_new_chat", use_container_width=True):
@@ -3045,6 +3017,14 @@ with st.sidebar:
 
     # ── Settings & Engine (Collapsible, Clean) ──
     with st.expander("Settings & Engine", icon=":material/settings:", expanded=False):
+        st.markdown(f"""
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:6px 10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:8px; font-size:0.75rem;">
+                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background-color:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.5);"></span>
+                <span style="color:#94a3b8;">Vector Database:</span>
+                <strong style="color:#f1f5f9;">{curr_db_label}</strong>
+            </div>
+        """, unsafe_allow_html=True)
+
         theme_options = ["Dark Obsidian", "Pure Light"]
         curr_theme_idx = 0 if st.session_state.get("theme_mode", "dark") == "dark" else 1
 
@@ -3116,7 +3096,7 @@ with st.sidebar:
             <div class="sb-status-dot"></div>
             <div class="sb-status-text">
                 <span class="sb-status-title">Engine Ready</span>
-                <span class="sb-status-sub">{selected_model_name.split(' ')[0]} &middot; {retrieval_mode.capitalize()}</span>
+                <span class="sb-status-sub">{curr_db_label}</span>
             </div>
         </div>
     """, unsafe_allow_html=True)
