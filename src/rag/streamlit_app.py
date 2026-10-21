@@ -2832,21 +2832,210 @@ current_user = None
 current_user_id = "default_user"
 if is_auth_configured and hasattr(st, "user"):
     if not st.user.is_logged_in:
+        # Full-screen focus styling for the authentication portal
         st.markdown("""
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:55vh; text-align:center; padding: 2rem 1rem;">
-                <div style="width:58px; height:58px; border-radius:18px; background:linear-gradient(135deg, #6366f1, #a855f7); display:flex; align-items:center; justify-content:center; margin-bottom:18px; box-shadow:0 8px 32px rgba(99,102,241,0.4);">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>
+            <style>
+                [data-testid="stSidebar"] { display: none !important; }
+                [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+                header[data-testid="stHeader"] { background: transparent !important; }
+                .main .block-container {
+                    max-width: 640px !important;
+                    padding-top: 3.5rem !important;
+                    padding-bottom: 3.5rem !important;
+                    margin: 0 auto !important;
+                }
+                /* Google Login Button Aesthetic */
+                div[data-testid="stButton"] button[kind="primary"] {
+                    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
+                    color: #ffffff !important;
+                    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+                    border-radius: 14px !important;
+                    padding: 0.75rem 1.4rem !important;
+                    font-size: 1.02rem !important;
+                    font-weight: 600 !important;
+                    letter-spacing: -0.01em !important;
+                    box-shadow: 0 8px 28px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+                    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                }
+                div[data-testid="stButton"] button[kind="primary"]:hover {
+                    transform: translateY(-2px) scale(1.015) !important;
+                    box-shadow: 0 12px 36px rgba(99, 102, 241, 0.65), 0 0 20px rgba(139, 92, 246, 0.4) !important;
+                    border-color: rgba(255, 255, 255, 0.45) !important;
+                }
+                div[data-testid="stButton"] button[kind="primary"]:active {
+                    transform: translateY(0px) scale(0.99) !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+            <div style="
+                position: relative;
+                background: radial-gradient(120% 120% at 50% 0%, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                border-radius: 28px;
+                padding: 44px 36px 36px 36px;
+                box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.8), 0 0 60px -15px rgba(99, 102, 241, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(28px);
+                -webkit-backdrop-filter: blur(28px);
+                text-align: center;
+                overflow: hidden;
+                margin-bottom: 22px;
+            ">
+                <!-- Top Iridescent Accent Line -->
+                <div style="
+                    position: absolute; top: 0; left: 15%; right: 15%; height: 2px;
+                    background: linear-gradient(90deg, transparent, #6366f1, #a855f7, #ec4899, transparent);
+                "></div>
+
+                <!-- Brand Hex Icon with Layered Glow -->
+                <div style="
+                    width: 76px; height: 76px;
+                    border-radius: 22px;
+                    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #d946ef 100%);
+                    display: inline-flex; align-items: center; justify-content: center;
+                    margin-bottom: 20px;
+                    box-shadow: 0 12px 40px rgba(124, 58, 237, 0.55), 0 0 25px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                ">
+                    <svg width="38" height="38" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+                    </svg>
                 </div>
-                <h1 style="font-size:2rem; font-weight:800; margin-bottom:8px; background:linear-gradient(135deg, #f8fafc, #cbd5e1); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">NexusRAG Studio</h1>
-                <p style="color:#94a3b8; font-size:0.92rem; max-width:420px; margin-bottom:24px; line-height:1.5;">
-                    Sign in with Google to access your private knowledge library and cloud-synced conversations.
+
+                <!-- Live Status Chip -->
+                <div>
+                    <span style="
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 7px;
+                        font-size: 0.72rem;
+                        font-weight: 700;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                        color: #c4b5fd;
+                        background: rgba(139, 92, 246, 0.14);
+                        border: 1px solid rgba(167, 139, 250, 0.28);
+                        border-radius: 9999px;
+                        padding: 5px 14px;
+                        margin-bottom: 16px;
+                    ">
+                        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+                        Enterprise Intelligence Platform
+                    </span>
+                </div>
+
+                <!-- Title & Subtitle -->
+                <h1 style="
+                    font-size: 2.35rem;
+                    font-weight: 800;
+                    letter-spacing: -0.035em;
+                    margin: 0 0 10px 0;
+                    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 60%, #cbd5e1 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                ">NexusRAG Studio</h1>
+
+                <p style="
+                    color: #94a3b8;
+                    font-size: 0.94rem;
+                    line-height: 1.6;
+                    max-width: 480px;
+                    margin: 0 auto 26px auto;
+                ">
+                    Sign in with your Google account to unlock your private knowledge library, persistent cloud memory, and multi-stage neural retrieval.
                 </p>
+
+                <!-- Value Proposition Feature Cards -->
+                <div style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                    text-align: left;
+                    margin-bottom: 8px;
+                ">
+                    <div style="
+                        display: flex; align-items: center; gap: 12px;
+                        background: rgba(15, 23, 42, 0.65);
+                        border: 1px solid rgba(255, 255, 255, 0.07);
+                        border-radius: 14px;
+                        padding: 12px 16px;
+                    ">
+                        <div style="
+                            width: 32px; height: 32px; border-radius: 10px;
+                            background: rgba(16, 185, 129, 0.15);
+                            display: flex; align-items: center; justify-content: center;
+                            color: #10b981; font-size: 1rem; flex-shrink: 0;
+                        ">&#9889;</div>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-size:0.86rem; font-weight:600; color:#f1f5f9;">Hybrid RAG Engine</span>
+                            <span style="font-size:0.75rem; color:#94a3b8;">BM25 Lexical + FAISS Dense + Cross-Encoder Reranking</span>
+                        </div>
+                    </div>
+
+                    <div style="
+                        display: flex; align-items: center; gap: 12px;
+                        background: rgba(15, 23, 42, 0.65);
+                        border: 1px solid rgba(255, 255, 255, 0.07);
+                        border-radius: 14px;
+                        padding: 12px 16px;
+                    ">
+                        <div style="
+                            width: 32px; height: 32px; border-radius: 10px;
+                            background: rgba(99, 102, 241, 0.15);
+                            display: flex; align-items: center; justify-content: center;
+                            color: #818cf8; font-size: 1rem; flex-shrink: 0;
+                        ">&#128274;</div>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-size:0.86rem; font-weight:600; color:#f1f5f9;">Zero-Trust User Vault</span>
+                            <span style="font-size:0.75rem; color:#94a3b8;">Encrypted per-user sessions with Supabase PostgreSQL pgvector</span>
+                        </div>
+                    </div>
+
+                    <div style="
+                        display: flex; align-items: center; gap: 12px;
+                        background: rgba(15, 23, 42, 0.65);
+                        border: 1px solid rgba(255, 255, 255, 0.07);
+                        border-radius: 14px;
+                        padding: 12px 16px;
+                    ">
+                        <div style="
+                            width: 32px; height: 32px; border-radius: 10px;
+                            background: rgba(236, 72, 153, 0.15);
+                            display: flex; align-items: center; justify-content: center;
+                            color: #f472b6; font-size: 1rem; flex-shrink: 0;
+                        ">&#127760;</div>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-size:0.86rem; font-weight:600; color:#f1f5f9;">Live Grounded Reasoning</span>
+                            <span style="font-size:0.75rem; color:#94a3b8;">Autonomous query decomposition with real-time web citations</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         """, unsafe_allow_html=True)
-        col_c1, col_c2, col_c3 = st.columns([1, 1.2, 1])
+
+        col_c1, col_c2, col_c3 = st.columns([1, 2.6, 1])
         with col_c2:
-            if st.button("Continue with Google", icon=":material/login:", type="primary", use_container_width=True):
-                st.login("clerk")
+            if st.button("Continue with Google", icon=":material/login:", type="primary", use_container_width=True, key="btn_clerk_auth_login"):
+                try:
+                    st.login("clerk")
+                except Exception:
+                    try:
+                        st.login()
+                    except Exception as err:
+                        st.error(f"Sign-in error: {err}")
+
+        st.markdown("""
+            <div style="text-align:center; margin-top:22px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.76rem; color:#64748b;">
+                    <span>Secured with <strong>Clerk Identity</strong></span>
+                    <span>&bull;</span>
+                    <span>256-Bit TLS</span>
+                    <span>&bull;</span>
+                    <span>Multi-Device Cloud Sync</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         st.stop()
     else:
         current_user = dict(st.user)
