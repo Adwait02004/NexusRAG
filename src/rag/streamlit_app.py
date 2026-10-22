@@ -70,13 +70,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Initialize Theme State immediately
-if "theme_mode" not in st.session_state:
+# Initialize Theme State immediately with query parameter and session persistence
+query_theme = st.query_params.get("theme", None)
+if query_theme in ["light", "dark"]:
+    st.session_state["theme_mode"] = query_theme
+elif "theme_mode" not in st.session_state:
     st.session_state["theme_mode"] = "dark"
-if "sb_theme_select" not in st.session_state:
-    st.session_state["sb_theme_select"] = "Dark Obsidian" if st.session_state["theme_mode"] == "dark" else "Pure Light"
 
-is_light = (st.session_state.get("theme_mode", "dark") == "light")
+curr_mode = st.session_state.get("theme_mode", "dark")
+if st.query_params.get("theme") != curr_mode:
+    st.query_params["theme"] = curr_mode
+
+st.session_state["sb_theme_select"] = "Pure Light" if curr_mode == "light" else "Dark Obsidian"
+is_light = (curr_mode == "light")
 
 # =============================================================================
 # --- NEW DESIGN SYSTEM: OBSIDIAN TITANIUM & SUNSET FLAME ---
@@ -2241,6 +2247,31 @@ div[data-testid="stSidebar"] .stDownloadButton > button:hover {
     color: #64748b !important;
 }
 
+/* ─── Authenticated User Profile in Light Mode ─── */
+.sb-user-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+}
+.sb-user-name {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+.sb-user-email {
+    color: #64748b !important;
+}
+
+div[class*="st-key-btn_clerk_logout"] button {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #334155 !important;
+}
+div[class*="st-key-btn_clerk_logout"] button:hover {
+    background: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #dc2626 !important;
+}
+
 /* ─── Floating Header Bar ─── */
 .header-bar {
     background: rgba(255, 255, 255, 0.94) !important;
@@ -2651,6 +2682,30 @@ import inspect
 import base64
 import streamlit.components.v1 as components
 import rag.search
+
+# Synchronize theme preference with browser localStorage so it survives hard refreshes & new sessions
+try:
+    _theme_sync_html = f"""
+    <script>
+    (function() {{
+        try {{
+            var activeMode = "{curr_mode}";
+            window.parent.localStorage.setItem("nexusrag_theme_preference", activeMode);
+            var parentUrl = new URL(window.parent.location.href);
+            if (!parentUrl.searchParams.has("theme")) {{
+                var storedPref = window.parent.localStorage.getItem("nexusrag_theme_preference");
+                if (storedPref && (storedPref === "light" || storedPref === "dark") && storedPref !== activeMode) {{
+                    parentUrl.searchParams.set("theme", storedPref);
+                    window.parent.location.href = parentUrl.toString();
+                }}
+            }}
+        }} catch (e) {{}}
+    }})();
+    </script>
+    """
+    components.html(_theme_sync_html, height=0, width=0)
+except Exception:
+    pass
 
 def copy_to_clipboard(text: str) -> bool:
     """Copy text to clipboard natively using Windows clip.exe or pyperclip with graceful fallback."""
@@ -3221,6 +3276,7 @@ with st.sidebar:
             new_mode = "light" if is_dark else "dark"
             st.session_state["theme_mode"] = new_mode
             st.session_state["sb_theme_select"] = "Pure Light" if new_mode == "light" else "Dark Obsidian"
+            st.query_params["theme"] = new_mode
             st.rerun()
 
     st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
@@ -3330,7 +3386,9 @@ with st.sidebar:
 
         def _sync_theme_dropdown():
             chosen = st.session_state.get("sb_theme_select")
-            st.session_state["theme_mode"] = "light" if chosen == "Pure Light" else "dark"
+            new_mode = "light" if chosen == "Pure Light" else "dark"
+            st.session_state["theme_mode"] = new_mode
+            st.query_params["theme"] = new_mode
 
         st.selectbox(
             "Appearance Mode",
@@ -3415,13 +3473,19 @@ with st.sidebar:
         u_name = current_user.get("name") or current_user.get("email") or "Google User"
         u_email = current_user.get("email", "")
         u_pic = current_user.get("picture")
-        pic_html = f'<img src="{u_pic}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />' if u_pic else f'<div style="width:28px;height:28px;border-radius:50%;background:#6366f1;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;">{u_name[:1].upper()}</div>'
+        pic_html = f'<img src="{u_pic}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />' if u_pic else f'<div style="width:28px;height:28px;border-radius:50%;background:#0d9488;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;">{u_name[:1].upper()}</div>'
+        
+        card_bg = "#ffffff" if is_light else "rgba(255,255,255,0.03)"
+        card_border = "#e2e8f0" if is_light else "rgba(255,255,255,0.06)"
+        name_color = "#000000" if is_light else "#f1f5f9"
+        email_color = "#64748b" if is_light else "#94a3b8"
+
         st.markdown(f"""
-            <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin-top:8px;">
+            <div class="sb-user-card" style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:{card_bg}; border:1px solid {card_border}; border-radius:10px; margin-top:8px;">
                 {pic_html}
                 <div style="display:flex; flex-direction:column; overflow:hidden;">
-                    <span style="font-size:0.78rem; font-weight:600; color:#f1f5f9; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{u_name}</span>
-                    <span style="font-size:0.66rem; color:#94a3b8; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{u_email}</span>
+                    <span class="sb-user-name" style="font-size:0.78rem; font-weight:700; color:{name_color}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{u_name}</span>
+                    <span class="sb-user-email" style="font-size:0.66rem; color:{email_color}; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">{u_email}</span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
