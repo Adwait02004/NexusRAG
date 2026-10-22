@@ -619,6 +619,28 @@ class RAGSearch:
             "   - NEVER output raw bracketed formulas like '[ \\sin... ]' or parentheses like '(\\displaystyle ...)' or '\\( ... \\)' without dollar signs.\n"
         )
 
+        code_instructions = (
+            "6. PROGRAMMING, CODE GENERATION & COMPLEXITY ADAPTATION (EASY, MEDIUM, HARD):\n"
+            "   - CAREFULLY CALIBRATE CODE COMPLEXITY TO THE PROBLEM STATEMENT:\n"
+            "     * Always evaluate the user's problem statement, context, and intent before writing code:\n"
+            "     * EASY (Beginner / Assignments / School & College Homework / Clean & Direct):\n"
+            "       If the problem asks for a basic assignment (e.g. 'Simple Calculator', string reversal, palindrome check, odd/even check, basic loops, basic CLI menu, introductory coursework), keep the implementation TRULY EASY, clean, and beginner-friendly. For example, for a Simple Calculator, use straightforward arithmetic operations (+, -, *, /) with clear if/elif/else branches or a simple dictionary of functions. DO NOT over-engineer with Abstract Syntax Trees (AST), tokenizer parsers, complex generics, or enterprise design patterns unless explicitly requested. Use clean variable names and friendly comments.\n"
+            "     * MEDIUM (Intermediate / Standard Development / Practical Real-World):\n"
+            "       If the task involves standard development (e.g. REST API endpoints, CRUD operations, database queries, authentication middleware, utility scripts), provide modular, robust code with standard error handling and idiomatic practices without bloat.\n"
+            "     * HARD / DIFFICULT (Advanced / High Performance / Complex Systems):\n"
+            "       If the statement explicitly asks for advanced algorithms, competitive programming, optimal dynamic programming, multi-threaded concurrency, or distributed systems, provide an elite, optimal solution with edge-case handling and Big-O time/space complexity analysis.\n"
+            "   - When helpful, you can present an Easy/Intuitive Approach first, followed by an Optimized Approach.\n"
+            "   - SUPPORT ALL PROGRAMMING LANGUAGES: Python, JavaScript, TypeScript, C++, C, C#, Java, Go, Rust, SQL, Bash/Shell, HTML/CSS, PHP, Swift, Kotlin, Ruby, R, Dart, Scala, Solidity, PowerShell, YAML, Dockerfile, etc.\n"
+            "   - STRICT SYNTAX & INDENTATION INTEGRITY (MANDATORY REQUIREMENT):\n"
+            "     * Format all code with strict, uniform, standard indentation (exactly 4 spaces for Python, Java, C++, C, C#, Rust, Go, SQL; 2 or 4 spaces for JavaScript, TypeScript, HTML, CSS).\n"
+            "     * Preserve all syntax symbols: never omit function call parentheses `()`, colons `:`, or parameter lists (e.g. `def main():`, `input().strip().lower()`, `result.is_integer()`).\n"
+            "     * NEVER mix tabs and spaces. Ensure every function body, loop, conditional, class, and nested block is consistently indented with 4 spaces so it runs immediately with 0 syntax or IndentationError issues.\n"
+            "   - STRICT ASCII OPERATOR & SYMBOL MANDATE (NO UNICODE MATH OPERATORS IN CODE):\n"
+            "     * NEVER output Unicode math characters like '≠', '≤', '≥', '×', '÷', or '−' in source code blocks or inline code.\n"
+            "     * ALWAYS write standard ASCII programming operators: '!=' for not-equal, '<=' for less-than-or-equal, '>=' for greater-than-or-equal, '==' for equality, '*' for multiplication, '/' for division, '-' for minus, and standard ASCII quotes '\"' and '''.\n"
+            "   - Debugging & Refactoring: When debugging user-submitted code, identify the root cause clearly, explain the fix in plain words, and provide the clean corrected code at the proper difficulty level.\n"
+        )
+
         system_prompt = (
             "You are an expert AI Assistant equipped with an Omni-Source Retrieval-Augmented Generation (RAG) knowledge engine.\n\n"
             "GUIDELINES:\n"
@@ -626,6 +648,7 @@ class RAGSearch:
             f"{format_instructions}\n"
             f"{visual_instructions}\n"
             f"{math_instructions}\n"
+            f"{code_instructions}\n"
             f"=== CONTEXT DOCUMENTS & EXTERNAL SOURCES ===\n{context_str}\n============================================="
         )
 

@@ -1334,15 +1334,55 @@ div[data-testid="stExpander"] summary:hover {
     color: #818cf8 !important;
 }
 
-/* Code block */
-pre, code {
-    font-family: 'JetBrains Mono', monospace !important;
+/* Universal Code Block & Strict Indentation */
+pre, code, kbd, samp {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    -webkit-tab-size: 4 !important;
 }
 
 div[data-testid="stCodeBlock"] {
-    border-radius: 14px !important;
+    border-radius: 12px !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     background: #0d0e14 !important;
+    overflow-x: auto !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+}
+
+div[data-testid="stCodeBlock"] pre {
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    white-space: pre !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    line-height: 1.55 !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+}
+
+div[data-testid="stCodeBlock"] code {
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    white-space: pre !important;
+    font-size: 0.88rem !important;
+    line-height: 1.55 !important;
+    letter-spacing: 0 !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+}
+
+div[data-testid="stChatMessage"] pre,
+div[data-testid="stChatMessage"] code {
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
 /* ═══ BOTTOM INPUT DOCK & SHIELD ═══ */
@@ -2436,9 +2476,28 @@ div[data-testid="stCodeBlock"] {
     background: #f8fafc !important;
     border: 1px solid #e2e8f0 !important;
     color: #0f172a !important;
+    overflow-x: auto !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
+}
+div[data-testid="stCodeBlock"] pre {
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    white-space: pre !important;
+    line-height: 1.55 !important;
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 div[data-testid="stCodeBlock"] code {
     color: #0f172a !important;
+    tab-size: 4 !important;
+    -moz-tab-size: 4 !important;
+    white-space: pre !important;
+    line-height: 1.55 !important;
+    font-variant-ligatures: none !important;
+    font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 table {
     border: 1px solid #e2e8f0 !important;
@@ -3265,16 +3324,509 @@ def open_library_dialog():
                     st.rerun()
 
 
+ALL_PROGRAMMING_LANGUAGES = [
+    "Python", "JavaScript", "TypeScript", "C++", "C", "C#", "Java",
+    "Rust", "Go", "SQL", "HTML / CSS", "Bash / Shell", "PHP",
+    "Swift", "Kotlin", "Ruby", "R", "Dart", "Scala", "Solidity",
+    "PowerShell", "YAML / Dockerfile"
+]
+
+POPULAR_SNIPPETS = {
+    "🟢 Python: Palindrome & String Reverse (Easy)": {
+        "lang": "python",
+        "code": '''def is_palindrome(text: str) -> bool:
+    """Check if a string is a palindrome ignoring spaces and case (Easy / Assignment Level)."""
+    clean_text = "".join(ch.lower() for ch in text if ch.isalnum())
+    return clean_text == clean_text[::-1]
+
+# Example test
+word = "RaceCar"
+print(f"Is '{word}' a palindrome? {is_palindrome(word)}")
+'''
+    },
+    "🟢 JavaScript: Array Filtering & Mapping (Easy)": {
+        "lang": "javascript",
+        "code": '''// Filter even numbers and double them (Easy / Beginner Level)
+const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
+
+const doubledEvens = numbers
+  .filter(num => num % 2 === 0)
+  .map(num => num * 2);
+
+console.log("Doubled Evens:", doubledEvens);
+// Output: [4, 8, 12, 16]
+'''
+    },
+    "🟢 Java: Basic Student Class & OOP (Easy)": {
+        "lang": "java",
+        "code": '''// Simple Student Class for School / College Assignment (Easy Level)
+public class Student {
+    private String name;
+    private int rollNumber;
+    private double grade;
+
+    public Student(String name, int rollNumber, double grade) {
+        this.name = name;
+        this.rollNumber = rollNumber;
+        this.grade = grade;
+    }
+
+    public void displayDetails() {
+        System.out.println("Roll: " + rollNumber + " | Name: " + name + " | Grade: " + grade);
+    }
+
+    public static void main(String[] args) {
+        Student s1 = new Student("Alex", 101, 88.5);
+        s1.displayDetails();
+    }
+}
+'''
+    },
+    "🟢 SQL: Simple Joins & Aggregations (Easy)": {
+        "lang": "sql",
+        "code": '''-- Total orders and average amount per customer (Easy / Assignment Level)
+SELECT 
+    c.customer_id,
+    c.customer_name,
+    COUNT(o.order_id) AS total_orders,
+    ROUND(AVG(o.amount), 2) AS avg_spent
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.customer_name
+ORDER BY total_orders DESC;
+'''
+    },
+    "🟡 Python: Thread-Safe LRU Cache (Medium)": {
+        "lang": "python",
+        "code": '''import threading
+from collections import OrderedDict
+
+class ThreadSafeLRUCache:
+    """Thread-safe LRU Cache with O(1) operations (Medium / Intermediate Level)."""
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.cache = OrderedDict()
+        self.lock = threading.Lock()
+
+    def get(self, key: str):
+        with self.lock:
+            if key not in self.cache:
+                return -1
+            self.cache.move_to_end(key)
+            return self.cache[key]
+
+    def put(self, key: str, value: any) -> None:
+        with self.lock:
+            if key in self.cache:
+                self.cache.move_to_end(key)
+            self.cache[key] = value
+            if len(self.cache) > self.capacity:
+                self.cache.popitem(last=False)
+'''
+    },
+    "🟡 TypeScript: React useDebounce Hook (Medium)": {
+        "lang": "typescript",
+        "code": '''import { useState, useEffect } from 'react';
+
+/**
+ * Custom hook to debounce fast-changing state values (Medium Level).
+ */
+export function useDebounce<T>(value: T, delay: number = 300): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
+}
+'''
+    },
+    "🟡 Go: Async Worker Pool with Context (Medium)": {
+        "lang": "go",
+        "code": '''package main
+
+import (
+    "context"
+    "fmt"
+    "sync"
+)
+
+type Job struct {
+    ID    int
+    Input string
+}
+
+type Result struct {
+    JobID  int
+    Output string
+    Err    error
+}
+
+func Worker(ctx context.Context, id int, jobs <-chan Job, results chan<- Result, wg *sync.WaitGroup) {
+    defer wg.Done()
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case job, ok := <-jobs:
+            if !ok {
+                return
+            }
+            results <- Result{
+                JobID:  job.ID,
+                Output: fmt.Sprintf("Worker %d completed job %d", id, job.ID),
+            }
+        }
+    }
+}
+'''
+    },
+    "🔴 Rust: Thread-Safe Shared State Mutex (Hard)": {
+        "lang": "rust",
+        "code": '''use std::sync::{Arc, Mutex};
+use std::thread;
+
+// Multi-threaded counter with atomic shared ownership (Hard Level)
+fn main() {
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = vec![];
+
+    for _ in 0..10 {
+        let counter_clone = Arc::clone(&counter);
+        let handle = thread::spawn(move || {
+            let mut num = counter_clone.lock().unwrap();
+            *num += 1;
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Final Count: {}", *counter.lock().unwrap());
+}
+'''
+    },
+    "🔴 SQL: Hierarchical Recursive CTE (Hard)": {
+        "lang": "sql",
+        "code": '''-- Recursive traversal of organization hierarchy with depth level (Hard Level)
+WITH RECURSIVE OrgHierarchy AS (
+    -- Anchor Member: Top-level managers
+    SELECT 
+        employee_id,
+        manager_id,
+        full_name,
+        role,
+        1 AS depth_level,
+        CAST(full_name AS VARCHAR(1000)) AS reporting_chain
+    FROM employees
+    WHERE manager_id IS NULL
+
+    UNION ALL
+
+    -- Recursive Member: Direct reports
+    SELECT 
+        e.employee_id,
+        e.manager_id,
+        e.full_name,
+        e.role,
+        oh.depth_level + 1,
+        CAST(oh.reporting_chain || ' -> ' || e.full_name AS VARCHAR(1000))
+    FROM employees e
+    INNER JOIN OrgHierarchy oh ON e.manager_id = oh.employee_id
+)
+SELECT * FROM OrgHierarchy ORDER BY depth_level, full_name;
+'''
+    }
+}
+
+def normalize_code_indentation(text: str) -> str:
+    """Normalize tabs to 4 spaces and clean trailing whitespace for consistent, professional indentation."""
+    if not isinstance(text, str):
+        return text
+    lines = text.splitlines()
+    clean_lines = [line.expandtabs(4).rstrip() for line in lines]
+    return "\n".join(clean_lines)
+
+def _run_code_ai_query(system_instruction: str, user_prompt: str, model_id: str = None) -> str:
+    # Append strict indentation rules to system prompt
+    strict_indent_rule = (
+        "\n\nMANDATORY INDENTATION REQUIREMENT: "
+        "Format every block with strict 4-space indentation (2 spaces for HTML/JS/CSS). "
+        "NEVER mix tabs and spaces. Ensure braces and closing tags line up with mathematical precision."
+    )
+    full_instruction = system_instruction + strict_indent_rule
+    try:
+        from langchain_core.messages import SystemMessage, HumanMessage
+        model = model_id or "qwen/qwen3.8-27b"
+        llm = rag.get_llm(model, temperature=0.1)
+        resp = llm.invoke([
+            SystemMessage(content=full_instruction),
+            HumanMessage(content=user_prompt)
+        ])
+        content = getattr(resp, "content", str(resp))
+        return normalize_code_indentation(content)
+    except Exception as e:
+        try:
+            from langchain_core.messages import SystemMessage, HumanMessage
+            llm = rag.get_llm(temperature=0.1)
+            resp = llm.invoke([
+                SystemMessage(content=full_instruction),
+                HumanMessage(content=user_prompt)
+            ])
+            content = getattr(resp, "content", str(resp))
+            return normalize_code_indentation(content)
+        except Exception as e2:
+            return f"Error generating code: {e2}"
+
+
+@st.dialog("Code Studio & Developer Hub", width="large")
+def open_code_studio_dialog():
+    st.markdown("""
+        <div style="font-size: 0.88rem; color: #94a3b8; margin-bottom: 12px; line-height: 1.4;">
+            Multi-language AI coding engine with customizable complexity (Easy, Medium, Hard) for assignments, debugging, and software engineering.
+        </div>
+    """, unsafe_allow_html=True)
+
+    tab_gen, tab_debug, tab_trans, tab_snip = st.tabs([
+        "⚡ Generate Code",
+        "🛠️ Debug & Review",
+        "🔄 Translate Language",
+        "📚 Multi-Language Snippets"
+    ])
+
+    with tab_gen:
+        col_lang, col_level, col_focus = st.columns([1.1, 1.3, 1.4])
+        with col_lang:
+            gen_lang = st.selectbox("Language", ALL_PROGRAMMING_LANGUAGES, key="cs_gen_lang")
+        with col_level:
+            gen_level = st.selectbox(
+                "Complexity Level",
+                [
+                    "🟢 Easy (Beginner / Assignments / Clean & Simple)",
+                    "🟡 Medium (Standard / Practical / Real-World)",
+                    "🔴 Hard / Difficult (Advanced / High Performance)"
+                ],
+                index=0,
+                key="cs_gen_level"
+            )
+        with col_focus:
+            gen_focus = st.selectbox(
+                "Problem Type",
+                [
+                    "Assignment / Homework / Classwork",
+                    "Core Algorithm & Problem Solving",
+                    "Feature / Application Script",
+                    "Performance Optimization"
+                ],
+                key="cs_gen_focus"
+            )
+
+        gen_task = st.text_area(
+            f"What is the assignment or problem to solve in {gen_lang}?",
+            placeholder=f"e.g., Write a function to check if a word is a palindrome, or build a student grade tracker in {gen_lang}...",
+            height=110,
+            key="cs_gen_task"
+        )
+
+        col_b1, col_b2 = st.columns([1.2, 1.2])
+        with col_b1:
+            if st.button("Generate Code in Studio", type="primary", use_container_width=True, key="btn_run_gen"):
+                if not gen_task.strip():
+                    st.warning("Please enter a description of what you want to build or solve.")
+                else:
+                    with st.spinner(f"Synthesizing {gen_level.split()[1]} {gen_lang} code..."):
+                        if "Easy" in gen_level:
+                            comp_guidance = (
+                                "TARGET COMPLEXITY: EASY (Beginner / Assignments / Clean & Simple). "
+                                "Keep the code straightforward, clean, and beginner-friendly. "
+                                "Avoid over-engineering, enterprise abstractions, or obscure libraries. "
+                                "Include helpful step-by-step inline comments explaining each line clearly."
+                            )
+                        elif "Medium" in gen_level:
+                            comp_guidance = (
+                                "TARGET COMPLEXITY: MEDIUM (Standard / Practical / Real-World). "
+                                "Provide clean, modular code with clear functions and proper error handling without unnecessary bloat."
+                            )
+                        else:
+                            comp_guidance = (
+                                "TARGET COMPLEXITY: HARD / DIFFICULT (Advanced / High Performance). "
+                                "Provide an elite, highly optimized implementation with comprehensive edge-case handling, optimal Big-O time and space complexity, and detailed algorithmic explanation."
+                            )
+
+                        system_inst = (
+                            f"You are an expert AI programming assistant and educator. "
+                            f"Generate code in {gen_lang} according to the specified complexity.\n"
+                            f"{comp_guidance}\n"
+                            f"Focus: {gen_focus}.\n"
+                            f"Wrap the code in standard Markdown ```{gen_lang.lower().split()[0]} code block. "
+                            f"Follow up with a simple explanation matching this complexity level."
+                        )
+                        result = _run_code_ai_query(system_inst, gen_task)
+                        st.session_state["cs_gen_result"] = result
+
+        with col_b2:
+            if st.button("Open in Active Chat 💬", use_container_width=True, key="btn_chat_gen"):
+                if gen_task.strip():
+                    st.session_state.pending_prompt = (
+                        f"Solve this in {gen_lang} with {gen_level.split()[1]} complexity level ({gen_focus}):\n\n{gen_task}"
+                    )
+                    st.rerun()
+
+        if st.session_state.get("cs_gen_result"):
+            st.markdown("---")
+            st.markdown(f"### Generated Solution ({gen_level.split()[1]})")
+            st.markdown(st.session_state["cs_gen_result"])
+            if st.button("Insert this Solution into Chat 💬", key="btn_ins_gen_chat"):
+                st.session_state.pending_prompt = f"Explain and optimize this {gen_lang} code further:\n\n{st.session_state['cs_gen_result']}"
+                st.rerun()
+
+    with tab_debug:
+        col_dlang, col_dlevel, col_dmode = st.columns([1.1, 1.3, 1.4])
+        with col_dlang:
+            dbg_lang = st.selectbox("Language", ALL_PROGRAMMING_LANGUAGES, key="cs_dbg_lang")
+        with col_dlevel:
+            dbg_level = st.selectbox(
+                "Target Fix Complexity",
+                [
+                    "🟢 Easy Fix (Keep Simple / Assignment Friendly)",
+                    "🟡 Medium (Standard Practical Refactor)",
+                    "🔴 Hard / Difficult (Maximum Optimization)"
+                ],
+                key="cs_dbg_level"
+            )
+        with col_dmode:
+            dbg_action = st.selectbox(
+                "Audit Focus",
+                ["Bug Detection & Simple Fix", "Assignment Correction & Explanation", "Performance Optimization", "Security & Vulnerability Audit"],
+                key="cs_dbg_action"
+            )
+
+        dbg_code = st.text_area(
+            f"Paste your {dbg_lang} code to debug/audit:",
+            placeholder="// Paste code snippet here...",
+            height=130,
+            key="cs_dbg_code"
+        )
+        dbg_error = st.text_input("Observed error or assignment problem statement (optional):", key="cs_dbg_err")
+
+        col_db1, col_db2 = st.columns([1.2, 1.2])
+        with col_db1:
+            if st.button("Audit & Fix Code", type="primary", use_container_width=True, key="btn_run_dbg"):
+                if not dbg_code.strip():
+                    st.warning("Please paste a code snippet to analyze.")
+                else:
+                    with st.spinner("Analyzing code and fixing bugs..."):
+                        if "Easy" in dbg_level:
+                            fix_guidance = "Keep the fix EASY and straightforward for beginners/assignments. Do not introduce complicated abstractions."
+                        elif "Medium" in dbg_level:
+                            fix_guidance = "Provide a standard, clean, and modular fix with good practices."
+                        else:
+                            fix_guidance = "Provide an advanced, high-performance, and hardened fix with deep optimization."
+
+                        system_inst = (
+                            f"You are a helpful programming tutor and code reviewer. "
+                            f"Analyze the following {dbg_lang} code. Focus: {dbg_action}.\n"
+                            f"{fix_guidance}\n"
+                            f"1. Pinpoint the bug or issue in simple, clear language.\n"
+                            f"2. Provide the corrected code in ```{dbg_lang.lower().split()[0]}.\n"
+                            f"3. Explain why the bug happened and how the fix solves it."
+                        )
+                        user_p = f"Code to review:\n```{dbg_lang.lower().split()[0]}\n{dbg_code}\n```\n"
+                        if dbg_error.strip():
+                            user_p += f"\nError/Assignment Statement:\n{dbg_error}"
+                        res = _run_code_ai_query(system_inst, user_p)
+                        st.session_state["cs_dbg_result"] = res
+
+        with col_db2:
+            if st.button("Send to Active Chat 💬", use_container_width=True, key="btn_chat_dbg"):
+                if dbg_code.strip():
+                    p = f"Please audit and debug this {dbg_lang} code with {dbg_level.split()[1]} complexity ({dbg_action}):\n\n```{dbg_lang.lower().split()[0]}\n{dbg_code}\n```"
+                    if dbg_error.strip():
+                        p += f"\n\nObserved Issue:\n{dbg_error}"
+                    st.session_state.pending_prompt = p
+                    st.rerun()
+
+        if st.session_state.get("cs_dbg_result"):
+            st.markdown("---")
+            st.markdown("### Code Review & Fix")
+            st.markdown(st.session_state["cs_dbg_result"])
+
+    with tab_trans:
+        col_s_lang, col_t_lang = st.columns([1, 1])
+        with col_s_lang:
+            s_lang = st.selectbox("Source Language", ALL_PROGRAMMING_LANGUAGES, index=0, key="cs_trans_s")
+        with col_t_lang:
+            t_lang = st.selectbox("Target Language", ALL_PROGRAMMING_LANGUAGES, index=2, key="cs_trans_t")
+
+        trans_code = st.text_area(
+            f"Code in {s_lang} to translate to {t_lang}:",
+            placeholder=f"// Paste {s_lang} code here...",
+            height=130,
+            key="cs_trans_code"
+        )
+
+        col_tb1, col_tb2 = st.columns([1.2, 1.2])
+        with col_tb1:
+            if st.button(f"Translate to {t_lang}", type="primary", use_container_width=True, key="btn_run_trans"):
+                if not trans_code.strip():
+                    st.warning("Please paste code to translate.")
+                else:
+                    with st.spinner(f"Translating {s_lang} to idiomatic {t_lang}..."):
+                        system_inst = (
+                            f"You are a Polyglot Compiler and Language Migration Specialist. "
+                            f"Translate the following {s_lang} code into idiomatic, clean {t_lang}. "
+                            f"Preserve exact semantics while adopting the target language's standard conventions. "
+                            f"Wrap the code in ```{t_lang.lower().split()[0]}."
+                        )
+                        res = _run_code_ai_query(system_inst, f"Translate to {t_lang}:\n```{s_lang.lower().split()[0]}\n{trans_code}\n```")
+                        st.session_state["cs_trans_result"] = res
+
+        with col_tb2:
+            if st.button("Send to Active Chat 💬", use_container_width=True, key="btn_chat_trans"):
+                if trans_code.strip():
+                    st.session_state.pending_prompt = f"Convert this {s_lang} code to idiomatic {t_lang}:\n\n```{s_lang.lower().split()[0]}\n{trans_code}\n```"
+                    st.rerun()
+
+        if st.session_state.get("cs_trans_result"):
+            st.markdown("---")
+            st.markdown(f"### Translated {t_lang} Code")
+            st.markdown(st.session_state["cs_trans_result"])
+
+    with tab_snip:
+        snip_choice = st.selectbox("Select Code Pattern & Difficulty Level", list(POPULAR_SNIPPETS.keys()), key="cs_snip_choice")
+        selected_info = POPULAR_SNIPPETS[snip_choice]
+        st.code(selected_info["code"], language=selected_info["lang"], line_numbers=True)
+        col_sb1, col_sb2 = st.columns([1.2, 1.2])
+        with col_sb1:
+            if st.button("Send Snippet to Active Chat 💬", type="primary", use_container_width=True, key="btn_snip_chat"):
+                st.session_state.pending_prompt = f"Explain this code snippet ({snip_choice}) and how it works step-by-step:\n\n```{selected_info['lang']}\n{selected_info['code']}\n```"
+                st.rerun()
+        with col_sb2:
+            st.caption("Select from Easy beginner assignments, Medium practical tasks, or Hard advanced patterns.")
+
+
 @st.dialog("Explore Prompts & Benchmarks")
 def open_explore_dialog():
     st.markdown("""
         <div style="font-size: 0.86rem; color: #94a3b8; margin-bottom: 12px;">
-            Select a benchmark query to test retrieval and synthesis:
+            Select a benchmark query to test retrieval, reasoning, and code synthesis:
         </div>
     """, unsafe_allow_html=True)
     prompts = [
         "Explain Neural Network Architectures with key diagrams",
+        "Implement a thread-safe LRU Cache in Python with O(1) operations",
         "Compare Transformer attention vs Convolutional feature maps",
+        "Write an async worker pool in Go with graceful context cancellation",
+        "Build a custom React useDebounce hook in TypeScript with unit tests",
         "Summarize performance bottlenecks in Hybrid Search pipelines",
         "What are the best practices for vector database chunking?"
     ]
@@ -3326,6 +3878,9 @@ with st.sidebar:
 
     if st.button("Knowledge Library", icon=":material/local_library:", key="btn_tool_library", use_container_width=True):
         open_library_dialog()
+
+    if st.button("Code Studio", icon=":material/code:", key="btn_tool_code", use_container_width=True):
+        open_code_studio_dialog()
 
     if st.button("Explore Prompts", icon=":material/explore:", key="btn_tool_explore", use_container_width=True):
         open_explore_dialog()
@@ -3572,10 +4127,47 @@ def convert_tables_to_prose(text: str) -> str:
     return "\n".join(result)
 
 
+def normalize_code_symbols(code_str: str) -> str:
+    """Normalize mathematical Unicode symbols to standard ASCII programming operators."""
+    if not isinstance(code_str, str):
+        return code_str
+    replacements = {
+        "≠": "!=",
+        "≤": "<=",
+        "≥": ">=",
+        "÷": "/",
+        "−": "-",  # Unicode minus (U+2212)
+        "–": "-",  # En-dash (U+2013)
+        "—": "--", # Em-dash (U+2014)
+        "“": '"',
+        "”": '"',
+        "‘": "'",
+        "’": "'",
+        "«": '"',
+        "»": '"',
+    }
+    for orig, rep in replacements.items():
+        code_str = code_str.replace(orig, rep)
+    # Convert multiplication sign × to * when between word/identifier tokens
+    code_str = re.sub(r'(?<=\w)\s*×\s*(?=\w)', ' * ', code_str)
+    return code_str
+
+
 def remove_inline_citations(text: str) -> str:
     """Remove inline citation markers across all bracket types (standard, lenticular, fullwidth) and naked mentions."""
     if not isinstance(text, str):
         return text
+
+    # Mask code blocks and inline code
+    code_blocks = []
+    def _mask_code(m):
+        idx = len(code_blocks)
+        sanitized = normalize_code_symbols(m.group(0))
+        code_blocks.append(sanitized)
+        return f"__CODE_BLOCK_CITE_{idx}__"
+
+    cleaned = re.sub(r"```[\s\S]*?```|`[^`\n]*`", _mask_code, text)
+
     patterns = [
         # Matches [Web Source 1], 【Web Source 1】, ［Web Source 1］, [1], 【1】, [Doc 1, 2], etc.
         r"[\[【［](?:Web(?:\/External)?\s*(?:Source)?|Doc(?:ument)?|Source|Private Document|\d+)[^\]】］]*[\]】］]",
@@ -3586,12 +4178,13 @@ def remove_inline_citations(text: str) -> str:
         # Empty brackets leftover
         r"[\[【［]\s*[\]】］]"
     ]
-    cleaned = text
     for p in patterns:
         cleaned = re.sub(p, "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r" +([.,;:!?])", r"\1", cleaned)
-    cleaned = re.sub(r"\(\s*\)", "", cleaned)
-    cleaned = re.sub(r"  +", " ", cleaned)
+
+    for idx, cb in enumerate(code_blocks):
+        cleaned = cleaned.replace(f"__CODE_BLOCK_CITE_{idx}__", cb)
+
     return cleaned
 
 
@@ -3643,6 +4236,16 @@ def format_latex_formulas(text: str) -> str:
     """Format and normalize mathematical formulas so Streamlit renders them as KaTeX formulas."""
     if not isinstance(text, str) or not text:
         return text
+
+    # Mask code blocks first so NO math conversions touch source code or indentation
+    masked_code = []
+    def _mask_cb(m):
+        idx = len(masked_code)
+        sanitized = normalize_code_symbols(m.group(0))
+        masked_code.append(sanitized)
+        return f"__CODE_LATEX_ISOLATED_{idx}__"
+
+    text = re.sub(r"```[\s\S]*?```|`[^`\n]*`", _mask_cb, text)
 
     # Remove \displaystyle which is redundant inside math mode and causes syntax clutter
     text = re.sub(r'\\displaystyle\s*', '', text)
@@ -3743,14 +4346,29 @@ def format_latex_formulas(text: str) -> str:
     text = re.sub(r'\$\$[ \t]*\$\$', '', text)
     text = re.sub(r'(?<!\$)\$[ \t]+\$(?!\$)', '', text)
 
+    # Restore code blocks verbatim
+    for idx, cb in enumerate(masked_code):
+        text = text.replace(f"__CODE_LATEX_ISOLATED_{idx}__", cb)
+
     return text
 
 
 def clean_markdown_content(text: str, query: str = "") -> str:
     if not isinstance(text, str):
         return str(text)
+
+    # Protect code blocks and inline code from any markdown/citation/math transformations
+    code_blocks = []
+    def _mask_code(m):
+        idx = len(code_blocks)
+        sanitized = normalize_code_symbols(m.group(0))
+        code_blocks.append(sanitized)
+        return f"__CODE_BLOCK_PLACEHOLDER_{idx}__"
+
+    cleaned = re.sub(r"```[\s\S]*?```|`[^`\n]*`", _mask_code, text)
+
     user_wants_table = bool(re.search(r"\b(table|tabular|grid|matrix)\b", query, re.IGNORECASE))
-    cleaned = text.replace("<br>•", "\n• ").replace("<br>", " ")
+    cleaned = cleaned.replace("<br>•", "\n• ").replace("<br>", " ")
     cleaned = remove_inline_citations(cleaned)
     if not user_wants_table:
         cleaned = convert_tables_to_prose(cleaned)
@@ -3768,6 +4386,11 @@ def clean_markdown_content(text: str, query: str = "") -> str:
     # Normalize LaTeX mathematical formulas so they render as visual KaTeX formulas
     cleaned = format_latex_formulas(cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+
+    # Restore code blocks verbatim
+    for idx, cb in enumerate(code_blocks):
+        cleaned = cleaned.replace(f"__CODE_BLOCK_PLACEHOLDER_{idx}__", cb)
+
     return cleaned
 
 
