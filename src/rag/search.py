@@ -38,9 +38,30 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 AVAILABLE_MODELS = [
-    {"id": "openai/gpt-oss-120b", "name": "GPT-OSS 120B (High Quality)"},
-    {"id": "openai/gpt-oss-20b", "name": "GPT-OSS 20B (Ultra Fast)"},
-    {"id": "qwen/qwen3.8-27b", "name": "Qwen 3.8 27B"},
+    {
+        "id": "openai/gpt-oss-120b",
+        "name": "GPT-OSS 120B (High Quality)",
+        "badge": "120B",
+        "desc": "Deep reasoning & grounded synthesis"
+    },
+    {
+        "id": "openai/gpt-oss-20b",
+        "name": "GPT-OSS 20B (Ultra Fast)",
+        "badge": "20B",
+        "desc": "Lightning fast responses for quick queries"
+    },
+    {
+        "id": "qwen/qwen3.8-27b",
+        "name": "Qwen 3.8 27B (Coder & Logic)",
+        "badge": "27B",
+        "desc": "Strong coding, mathematics & technical analysis"
+    },
+    {
+        "id": "allam-2-7b",
+        "name": "Allam 2 7B (Lightweight)",
+        "badge": "7B",
+        "desc": "Fast lightweight conversational model"
+    },
 ]
 
 def sanitize_text(text: str) -> str:

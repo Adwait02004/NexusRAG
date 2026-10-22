@@ -209,24 +209,180 @@
             transform: scale(0.94);
         }
 
-        /* ─── Model Indicator Pill ─── */
+        /* ─── Model Picker & Dropdown ─── */
+        .model-picker-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
         .model-pill {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 12px;
             padding: 5px 10px;
             font-size: 0.78rem;
             font-weight: 600;
-            color: #c4c7c5;
+            color: #d1d5db;
             display: flex;
             align-items: center;
-            gap: 5px;
-            cursor: default;
+            gap: 6px;
+            cursor: pointer;
             user-select: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .model-pill svg {
-            opacity: 0.7;
+        .model-pill:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(99, 102, 241, 0.5);
+            color: #ffffff;
+        }
+
+        .model-pill.open {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+            color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+        }
+
+        .model-pill .chevron-icon {
+            opacity: 0.75;
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .model-pill.open .chevron-icon {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+
+        /* ─── Model Dropdown Menu Popup ─── */
+        .model-dropdown {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            right: 0;
+            width: 300px;
+            max-width: 92vw;
+            background: #181920;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            padding: 7px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 1000;
+            animation: modelDropdownIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .model-dropdown.show {
+            display: flex;
+        }
+
+        @keyframes modelDropdownIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .model-dropdown-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px 6px 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 3px;
+        }
+
+        .model-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+
+        .model-item:hover {
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .model-item.active {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+
+        .model-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        .model-item-name {
+            font-size: 0.81rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .model-item.active .model-item-name {
+            color: #a5b4fc;
+        }
+
+        .model-item-desc {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .model-item-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .model-item-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+        }
+
+        .model-item.active .model-item-badge {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+
+        .model-item-check {
+            width: 14px;
+            height: 14px;
+            color: #818cf8;
+            display: none;
+        }
+
+        .model-item.active .model-item-check {
+            display: inline-block;
         }
 
         /* ─── Mic / Voice Icon ─── */
@@ -343,8 +499,51 @@
             border-color: #cbd5e1;
             color: #334155;
         }
-        body.light-mode .model-pill svg path {
-            fill: #4f46e5;
+        body.light-mode .model-pill:hover {
+            background: #e2e8f0;
+            border-color: #4f46e5;
+            color: #0f172a;
+        }
+        body.light-mode .model-pill.open {
+            background: rgba(79, 70, 229, 0.12);
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+        body.light-mode .model-dropdown {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        }
+        body.light-mode .model-dropdown-hdr {
+            color: #64748b;
+            border-bottom-color: #f1f5f9;
+        }
+        body.light-mode .model-item:hover {
+            background: #f8fafc;
+        }
+        body.light-mode .model-item.active {
+            background: rgba(79, 70, 229, 0.08);
+            border-color: rgba(79, 70, 229, 0.25);
+        }
+        body.light-mode .model-item-name {
+            color: #0f172a;
+        }
+        body.light-mode .model-item.active .model-item-name {
+            color: #4f46e5;
+        }
+        body.light-mode .model-item-desc {
+            color: #64748b;
+        }
+        body.light-mode .model-item-badge {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        body.light-mode .model-item.active .model-item-badge {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+        body.light-mode .model-item-check {
+            color: #4f46e5;
         }
         body.light-mode .mic-btn {
             color: #64748b;
@@ -392,12 +591,26 @@
                 </div>
 
                 <div class="right-actions">
-                    <!-- Model Indicator Badge -->
-                    <div class="model-pill" id="modelPill" title="Active Engine Model">
-                        <span id="modelNameText">Flash-Lite</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
+                    <!-- Model Indicator & Dropdown Pill -->
+                    <div class="model-picker-wrap" id="modelPickerWrap">
+                        <!-- Model Dropdown Popup -->
+                        <div class="model-dropdown" id="modelDropdown">
+                            <div class="model-dropdown-hdr">
+                                <span>Choose AI Model</span>
+                                <span style="font-size: 0.62rem; font-weight: 500; opacity: 0.85;">Groq Fast Inference</span>
+                            </div>
+                            <div class="model-items-list" id="modelItemsList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Clickable Pill -->
+                        <div class="model-pill" id="modelPill" title="Click to switch model" role="button" tabindex="0">
+                            <span id="modelNameText">GPT-OSS 120B</span>
+                            <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
                     </div>
 
                     <!-- Mic Icon (Screenshot Aesthetic) -->
@@ -429,7 +642,19 @@
         const chatCapsule = document.getElementById('chatCapsule');
         const attachmentsRow = document.getElementById('attachmentsRow');
         const modelNameText = document.getElementById('modelNameText');
+        const modelPill = document.getElementById('modelPill');
+        const modelDropdown = document.getElementById('modelDropdown');
+        const modelItemsList = document.getElementById('modelItemsList');
+        const mainContainer = document.getElementById('mainContainer');
         const micBtn = document.getElementById('micBtn');
+
+        let availableModelsList = [
+            { id: "openai/gpt-oss-120b", name: "GPT-OSS 120B (High Quality)", badge: "120B", desc: "Deep reasoning & grounded synthesis" },
+            { id: "openai/gpt-oss-20b", name: "GPT-OSS 20B (Ultra Fast)", badge: "20B", desc: "Lightning fast responses for quick queries" },
+            { id: "qwen/qwen3.8-27b", name: "Qwen 3.8 27B (Coder & Logic)", badge: "27B", desc: "Strong coding, mathematics & analysis" },
+            { id: "allam-2-7b", name: "Allam 2 7B (Lightweight)", badge: "7B", desc: "Fast lightweight conversational model" }
+        ];
+        let currentSelectedModel = "GPT-OSS 120B (High Quality)";
 
         let currentActiveDocs = [];
 
@@ -441,8 +666,17 @@
         }
 
         function notifyFrameHeight() {
-            const h = document.getElementById('chatCapsule').offsetHeight + 14;
-            sendToStreamlit("streamlit:setFrameHeight", { height: Math.max(h, 68) });
+            const capsuleH = document.getElementById('chatCapsule').offsetHeight;
+            const isDropdownOpen = modelDropdown && modelDropdown.classList.contains('show');
+            let dropdownExtra = 0;
+            if (isDropdownOpen) {
+                dropdownExtra = modelDropdown.offsetHeight + 14;
+                mainContainer.style.paddingTop = (dropdownExtra + 4) + 'px';
+            } else {
+                mainContainer.style.paddingTop = '4px';
+            }
+            const totalH = capsuleH + dropdownExtra + 18;
+            sendToStreamlit("streamlit:setFrameHeight", { height: Math.max(totalH, 68) });
         }
 
         // Render document chips inside the chat input bar
@@ -583,6 +817,104 @@
             }
         });
 
+        function formatPillLabel(fullName) {
+            if (!fullName) return "GPT-OSS 120B";
+            const cleaned = fullName.replace(/\s*\([^)]*\)/g, '').trim();
+            return cleaned || fullName;
+        }
+
+        function renderModelList() {
+            if (!modelItemsList) return;
+            modelItemsList.innerHTML = '';
+            availableModelsList.forEach((m) => {
+                const item = document.createElement('div');
+                const isSelected = (m.name === currentSelectedModel || m.id === currentSelectedModel);
+                item.className = 'model-item' + (isSelected ? ' active' : '');
+                
+                const cleanName = formatPillLabel(m.name);
+                const badge = m.badge || (m.name.match(/\d+B/i) ? m.name.match(/\d+B/i)[0] : 'LLM');
+                const desc = m.desc || (isSelected ? 'Active Model' : 'Click to select');
+
+                item.innerHTML = `
+                    <div class="model-item-info">
+                        <div class="model-item-name">${cleanName}</div>
+                        <div class="model-item-desc">${desc}</div>
+                    </div>
+                    <div class="model-item-right">
+                        <span class="model-item-badge">${badge}</span>
+                        <svg class="model-item-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                `;
+
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    currentSelectedModel = m.name;
+                    modelNameText.textContent = cleanName;
+                    closeModelDropdown();
+
+                    sendToStreamlit("streamlit:setComponentValue", {
+                        value: {
+                            action: "change_model",
+                            model_name: m.name,
+                            model_id: m.id,
+                            timestamp: Date.now()
+                        }
+                    });
+                });
+
+                modelItemsList.appendChild(item);
+            });
+        }
+
+        function toggleModelDropdown(e) {
+            if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            if (modelDropdown.classList.contains('show')) {
+                closeModelDropdown();
+            } else {
+                openModelDropdown();
+            }
+        }
+
+        function openModelDropdown() {
+            renderModelList();
+            modelDropdown.classList.add('show');
+            modelPill.classList.add('open');
+            notifyFrameHeight();
+        }
+
+        function closeModelDropdown() {
+            if (modelDropdown && modelDropdown.classList.contains('show')) {
+                modelDropdown.classList.remove('show');
+                modelPill.classList.remove('open');
+                notifyFrameHeight();
+            }
+        }
+
+        if (modelPill) {
+            modelPill.addEventListener('click', toggleModelDropdown);
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (modelDropdown && modelPill) {
+                if (!modelDropdown.contains(e.target) && !modelPill.contains(e.target)) {
+                    closeModelDropdown();
+                }
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModelDropdown();
+            }
+        });
+
         // Init
         window.addEventListener('DOMContentLoaded', () => {
             try {
@@ -593,6 +925,7 @@
                     document.body.classList.remove('light-mode');
                 }
             } catch(e) {}
+            renderModelList();
             sendToStreamlit("streamlit:componentReady", { apiVersion: 1 });
             notifyFrameHeight();
         });
@@ -606,10 +939,15 @@
                     renderDocumentCards(args.active_docs);
                 }
 
+                // Update available models list
+                if (args.available_models && Array.isArray(args.available_models) && args.available_models.length > 0) {
+                    availableModelsList = args.available_models;
+                }
+
                 // Update model pill text if passed
                 if (args.current_model) {
-                    const shortName = args.current_model.split(' ')[0] || "Flash-Lite";
-                    modelNameText.textContent = shortName;
+                    currentSelectedModel = args.current_model;
+                    modelNameText.textContent = formatPillLabel(args.current_model);
                 }
 
                 // Update theme mode
@@ -622,6 +960,7 @@
                     }
                 }
 
+                renderModelList();
                 notifyFrameHeight();
             }
         });

@@ -1,3 +1,4 @@
+import os
 import sys
 import shutil
 import time
@@ -9,6 +10,7 @@ import inspect
 import subprocess
 import urllib
 import urllib.parse
+from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
 import streamlit as st
 
@@ -35,15 +37,21 @@ try:
     load_dotenv(PROJECT_DIR / ".env")
     load_dotenv()
     if hasattr(st, "secrets"):
-        def _unpack_secrets(d):
+        def _unpack_secrets(d, prefix=""):
             for k, v in d.items():
                 if isinstance(v, dict) or hasattr(v, "items"):
-                    _unpack_secrets(v)
+                    _unpack_secrets(v, prefix=f"{k}_")
                 else:
                     val_str = str(v)
                     os.environ[k] = val_str
                     os.environ[k.upper()] = val_str
                     os.environ[k.lower()] = val_str
+                    if prefix:
+                        pre_clean = prefix.lower()
+                        if "postgres" in pre_clean or "supabase" in pre_clean:
+                            clean_k = k.upper().replace("POSTGRES_", "")
+                            os.environ[f"POSTGRES_{clean_k}"] = val_str
+                        os.environ[f"{prefix}{k}".upper()] = val_str
         _unpack_secrets(st.secrets)
 except Exception:
     pass
@@ -3054,14 +3062,7 @@ NexusRAG Studio fuses your private documents (PDF, DOCX, CSV, Excel, TXT) with r
 
 
 # ─── Chat History Manager ─── #
-@st.cache_resource(show_spinner=False)
-def get_chat_manager(_pg_db=None, user_id="default_user"):
-    try:
-        return ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=_pg_db, user_id=user_id)
-    except TypeError:
-        return ChatHistoryManager(PROJECT_DIR / "data" / "chats", user_id=user_id)
-
-chat_mgr = get_chat_manager(getattr(rag, "pg_db", None), user_id=current_user_id)
+chat_mgr = ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=getattr(rag, "pg_db", None), user_id=current_user_id)
 if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
     st.session_state.messages = []
@@ -3281,7 +3282,16 @@ with st.sidebar:
         )
 
         model_options = {m["name"]: m["id"] for m in AVAILABLE_MODELS}
-        selected_model_name = st.selectbox("Model", list(model_options.keys()), index=0, key="sb_model_name")
+        current_sb_model = st.session_state.get("sb_model_name")
+        model_names_list = list(model_options.keys())
+        model_idx = model_names_list.index(current_sb_model) if current_sb_model in model_names_list else 0
+
+        selected_model_name = st.selectbox(
+            "Model",
+            model_names_list,
+            index=model_idx,
+            key="sb_model_name"
+        )
         selected_model_id = model_options[selected_model_name]
 
         retrieval_mode_label = st.selectbox(
@@ -3678,6 +3688,59 @@ def render_entity_images(images, query: str = "", content: str = ""):
 
 
 # =====================================================================
+# ███  SAFE IMAGE & GENAI HELPERS (Zero AttributeError Guard)  ███████
+# =====================================================================
+
+def safe_is_genai_image_query(query: str) -> bool:
+    try:
+        if hasattr(OmniSearchEngine, "is_genai_image_query"):
+            return OmniSearchEngine.is_genai_image_query(query)
+    except Exception:
+        pass
+    gen_pattern = (
+        r"\b(generate|create|draw|paint|render|make)\s+(?:an?\s+|one\s+|a\s+|some\s+)?(?:ai\s+)?(?:images?|pictures?|photos?|artwork|illustrations?|portraits?|art|visuals?)\b|"
+        r"^(?:please\s+)?(?:draw|paint|render)\s+[a-zA-Z0-9\s]+|"
+        r"\b(?:ai\s+generated|flux|sdxl|dall-e|midjourney|generative\s+ai|genai)\b"
+    )
+    return bool(re.search(gen_pattern, str(query or "").strip(), re.IGNORECASE))
+
+def safe_is_pure_image_query(query: str) -> bool:
+    try:
+        if hasattr(OmniSearchEngine, "is_pure_image_query"):
+            return OmniSearchEngine.is_pure_image_query(query)
+    except Exception:
+        pass
+    q = str(query or "").strip()
+    gen_kw = bool(re.search(
+        r"\b(generate|create|draw|paint|render)\s+(?:an?\s+|one\s+|some\s+)?(?:ai\s+)?(?:images?|pictures?|photos?|artwork|art|visuals?)\b|"
+        r"^(?:please\s+)?(?:draw|paint|render)\s+",
+        q,
+        re.IGNORECASE
+    ))
+    img_kw = bool(re.search(r"\b(images?|pictures?|photos?|illustrations?|portraits?|figures?|visuals?)\b", q, re.IGNORECASE))
+    return gen_kw or img_kw
+
+def safe_clean_entity_query(query: str) -> str:
+    try:
+        if hasattr(OmniSearchEngine, "clean_entity_query"):
+            return OmniSearchEngine.clean_entity_query(query)
+    except Exception:
+        pass
+    return str(query or "").strip()
+
+def safe_generate_ai_image(prompt: str) -> Dict[str, Any]:
+    try:
+        if hasattr(OmniSearchEngine, "generate_ai_image"):
+            return OmniSearchEngine.generate_ai_image(prompt)
+    except Exception:
+        pass
+    encoded = urllib.parse.quote(str(prompt or "concept").strip())
+    seed = abs(hash(str(prompt or "concept").strip())) % 100000
+    url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=768&nologo=true&seed={seed}&model=flux"
+    return {"title": f"AI Synthesis: {prompt}", "image_url": url, "source_url": url, "caption": "Generative AI Synthesis (FLUX)"}
+
+
+# =====================================================================
 # ███  CONVERSATION DISPLAY  ████████████████████████████████████████
 # =====================================================================
 
@@ -3796,8 +3859,8 @@ for idx, msg in enumerate(st.session_state.messages):
                 r"as an ai,? i (?:can't|cannot) generate images?"
             ]
             is_refusal = any(re.search(p, (msg.get("content") or "").strip(), re.I) for p in refusal_patterns)
-            is_pure_img_req = OmniSearchEngine.is_pure_image_query(user_q)
-            is_genai_req = OmniSearchEngine.is_genai_image_query(user_q)
+            is_pure_img_req = safe_is_pure_image_query(user_q)
+            is_genai_req = safe_is_genai_image_query(user_q)
             is_img_q = is_pure_img_req or bool(re.search(r"\b(images?|pictures?|photos?|diagrams?|illustrations?|figures?|visuals?)\b", user_q, re.IGNORECASE))
 
             if is_img_q and not msg.get("images"):
@@ -3813,7 +3876,7 @@ for idx, msg in enumerate(st.session_state.messages):
             asst_text = msg.get("content", "")
             has_hallucination = bool(re.search(r"\b(?:the image in focus|informative overview|key visual moments|in this image|this photograph)\b", asst_text, re.IGNORECASE))
             if (is_refusal or is_pure_img_req or has_hallucination or (is_img_q and "direct-link images" in asst_text.lower())) and msg.get("images"):
-                cleaned_entity = OmniSearchEngine.clean_entity_query(user_q)
+                cleaned_entity = safe_clean_entity_query(user_q)
                 if is_genai_req:
                     asst_text = f"Here is the GenAI visual synthesis for **{cleaned_entity}** (powered by FLUX):"
                 else:
@@ -3877,6 +3940,7 @@ with st.bottom:
     component_output = gemini_chat_input(
         active_docs=st.session_state.get("staged_attachments", []),
         current_model=selected_model_name,
+        available_models=AVAILABLE_MODELS,
         theme=st.session_state.get("theme_mode", "dark"),
         key="gemini_bottom_input"
     )
@@ -3888,7 +3952,15 @@ if component_output:
     msg_ts = component_output.get("timestamp")
     last_processed_ts = st.session_state.get("_last_component_timestamp")
 
-    if action == "open_gemini_menu":
+    if action == "change_model":
+        if msg_ts != last_processed_ts:
+            st.session_state["_last_component_timestamp"] = msg_ts
+            new_model_name = component_output.get("model_name")
+            if new_model_name and new_model_name in model_options:
+                st.session_state["sb_model_name"] = new_model_name
+                st.toast(f"Switched model to {new_model_name}", icon=":material/check_circle:")
+                st.rerun()
+    elif action == "open_gemini_menu":
         if msg_ts != last_processed_ts:
             st.session_state["_last_component_timestamp"] = msg_ts
             open_gemini_attachment_dialog()
@@ -4077,7 +4149,7 @@ if active_query:
                     attached_docs=curr_attachments or None
                 )
 
-            is_pure_image_request = OmniSearchEngine.is_pure_image_query(active_query)
+            is_pure_image_request = safe_is_pure_image_query(active_query)
             is_image_query = is_pure_image_request or bool(re.search(r"\b(images?|pictures?|photos?|diagrams?|illustrations?|figures?|visuals?)\b", active_query, re.IGNORECASE))
 
             img_limit = 6 if is_image_query else 3
@@ -4099,12 +4171,12 @@ if active_query:
 
             # ── PURE IMAGE / GENAI REQUEST: Render images directly without LLM hallucination ──
             if is_pure_image_request:
-                cleaned_entity = OmniSearchEngine.clean_entity_query(active_query)
-                is_genai = OmniSearchEngine.is_genai_image_query(active_query)
+                cleaned_entity = safe_clean_entity_query(active_query)
+                is_genai = safe_is_genai_image_query(active_query)
 
                 # If no entity images retrieved yet, synthesize immediately with GenAI FLUX
                 if not entity_images:
-                    genai_img = OmniSearchEngine.generate_ai_image(cleaned_entity)
+                    genai_img = safe_generate_ai_image(cleaned_entity)
                     entity_images = [genai_img]
 
                 if is_genai:
@@ -4135,7 +4207,7 @@ if active_query:
                 if not is_genai and display_imgs and not any(im.get("is_genai") for im in display_imgs):
                     with st.expander("✨ Synthesize with GenAI (FLUX Neural Engine)", expanded=False):
                         ai_prompt = f"{cleaned_entity}, photorealistic, dramatic lighting, 8k"
-                        ai_img_data = OmniSearchEngine.generate_ai_image(ai_prompt)
+                        ai_img_data = safe_generate_ai_image(ai_prompt)
                         st.image(ai_img_data["image_url"], caption=f"GenAI FLUX Synthesis • {cleaned_entity}", use_container_width=True)
 
                 # Also render remaining images as media cards
@@ -4202,7 +4274,7 @@ if active_query:
                 ]
                 is_refusal = any(re.search(p, (full_response or "").strip(), re.I) for p in refusal_patterns)
                 if is_refusal and entity_images:
-                    cleaned_entity = OmniSearchEngine.clean_entity_query(active_query)
+                    cleaned_entity = safe_clean_entity_query(active_query)
                     full_response = f"Here is the visual overview and verified imagery for **{cleaned_entity}** from official encyclopedia and media archives:"
                     st.markdown(full_response)
 

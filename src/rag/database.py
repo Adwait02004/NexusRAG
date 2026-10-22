@@ -16,22 +16,29 @@ except Exception:
 logger = logging.getLogger("NexusRAG.Database")
 
 def _resolve_config(key: str, default: Any = None) -> Any:
-    """Resolve configuration from os.environ first, then fallback to st.secrets."""
-    for k in [key, key.upper(), key.lower()]:
+    """Resolve configuration from os.environ first, then fallback to st.secrets with full alias matching."""
+    clean_k = key.replace("POSTGRES_", "").replace("postgres_", "")
+    keys_to_test = [key, key.upper(), key.lower(), clean_k, clean_k.upper(), clean_k.lower()]
+    if clean_k.lower() in ("db", "database", "dbname"):
+        keys_to_test.extend(["database", "db", "dbname", "POSTGRES_DB", "postgres_db"])
+
+    for k in keys_to_test:
         val = os.getenv(k)
         if val is not None and str(val).strip():
             return val
+
     try:
         import streamlit as st
         if hasattr(st, "secrets"):
-            for k in [key, key.upper(), key.lower()]:
+            for k in keys_to_test:
                 if k in st.secrets:
                     return st.secrets[k]
             for sec in ["postgres", "supabase", "database", "POSTGRES", "SUPABASE"]:
-                if sec in st.secrets:
-                    for k in [key, key.upper(), key.lower()]:
-                        if k in st.secrets[sec]:
-                            return st.secrets[sec][k]
+                if sec in st.secrets and isinstance(st.secrets[sec], (dict, object)):
+                    sec_dict = st.secrets[sec]
+                    for k in keys_to_test:
+                        if k in sec_dict:
+                            return sec_dict[k]
     except Exception:
         pass
     return default
