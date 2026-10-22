@@ -40,15 +40,24 @@ class OmniSearchEngine:
         ]
         return any(bool(re.search(p, q, re.IGNORECASE)) for p in patterns)
 
-    @staticmethod
-    def is_entity_relevant(query: str, title: str, extract: str = "") -> bool:
+    GENERIC_CATEGORY_WORDS = {
+        "movie", "movies", "film", "films", "cinema", "actor", "actors",
+        "actress", "actresses", "cast", "star", "stars", "character", "characters",
+        "magazine", "magazines", "book", "books", "game", "games", "show", "shows",
+        "series", "episode", "episodes", "season", "seasons", "story", "stories",
+        "list", "all", "name", "names", "year", "years", "role", "roles",
+        "cover", "pdf", "file", "image", "images", "photo", "photos", "picture", "pictures",
+        "that", "this", "from", "with", "about", "what", "which", "who", "whom", "tell",
+        "please", "give", "show", "find", "get", "new", "top", "best", "greatest", "reference"
+    }
+
+    @classmethod
+    def is_entity_relevant(cls, query: str, title: str, extract: str = "") -> bool:
         """Strict semantic & token overlap guardrail to reject random un-related Wikipedia results."""
         if not title or not query:
             return False
-        q_norm = query.lower()
-        t_norm = title.lower()
-        if q_norm in t_norm or t_norm in q_norm:
-            return True
+        q_norm = query.lower().strip()
+        t_norm = title.lower().strip()
 
         stopwords = {
             "the", "and", "for", "with", "from", "about", "what", "which",
@@ -57,19 +66,25 @@ class OmniSearchEngine:
             "latest", "release", "year", "info", "details", "real", "name",
             "source", "web", "doc", "page"
         }
-        q_words = set(re.findall(r"\b[a-z0-9]{3,}\b", q_norm)) - stopwords
-        t_words = set(re.findall(r"\b[a-z0-9]{3,}\b", t_norm)) - stopwords
+        all_ignored = stopwords | cls.GENERIC_CATEGORY_WORDS
+
+        q_words = set(re.findall(r"\b[a-z0-9]{3,}\b", q_norm)) - all_ignored
+        t_words = set(re.findall(r"\b[a-z0-9]{3,}\b", t_norm)) - all_ignored
         if not q_words:
+            # If the query only consists of generic words (e.g. 'that movie', 'list all actors'), reject false positives
             return False
+
+        # Only allow substring match if query contains at least one specific entity word
+        if q_norm in t_norm or t_norm in q_norm:
+            if any(w in t_norm for w in q_words):
+                return True
 
         if len(q_words.intersection(t_words)) >= 1:
             return True
 
         if extract:
             e_norm = extract[:350].lower()
-            if q_norm in e_norm:
-                return True
-            if len(q_words) >= 2 and all(w in e_norm for w in q_words):
+            if any(w in e_norm for w in q_words) and len(q_words.intersection(set(re.findall(r"\b[a-z0-9]{3,}\b", e_norm)))) >= 1:
                 return True
 
         return False
@@ -153,10 +168,12 @@ class OmniSearchEngine:
         cleaned = query.strip()
         cleaned = re.sub(r"[\?\.\!]+$", "", cleaned).strip()
 
-        # Multi-pass strip of conversational starters and desire prefixes
+        # Multi-pass strip of conversational starters, list directives, and desire prefixes
         prefix_pattern = (
             r"^(?:also\s+)?(?:please\s+)?"
-            r"(?:can\s+(?:i|we|you)\s+(?:see|have|get|show\s+me)\s+|could\s+you\s+(?:show|give|send)\s+|"
+            r"(?:list\s+(?:all\s+)?(?:the\s+)?(?:actors?|cast|characters?|members?|names?|details?|items?)?\s*(?:from|of|in)?\s+|"
+            r"who\s+are\s+(?:all\s+)?(?:the\s+)?(?:actors?|cast|characters?|members?)\s*(?:from|of|in)?\s+|"
+            r"can\s+(?:i|we|you)\s+(?:see|have|get|show\s+me)\s+|could\s+you\s+(?:show|give|send)\s+|"
             r"i\s+(?:want|need)\s+(?:to\s+see\s+)?|(?:i\s+)?need\s+|let\s+me\s+see\s+|tell\s+me\s+about|"
             r"what\s+does\s+[a-zA-Z0-9\s]+look\s+like|search\s+(?:for)?\s+|"
             r"(?:show|display|give|get|find|fetch|provide|send|generate|create|draw|produce|paint|render|see|view)\s+(?:me\s+)?|"
@@ -183,6 +200,11 @@ class OmniSearchEngine:
 
         # Strip leading prepositions, articles, or remnant qualifiers
         cleaned = re.sub(r"^(?:of|for|about|an?|the|only|just|single)\s+", "", cleaned, flags=re.IGNORECASE).strip()
+
+        # If cleaned is purely generic anaphora (e.g. 'that movie', 'this film', 'it'), return empty
+        if re.fullmatch(r"(?:that|this|the)\s+(?:movie|film|series|show|book|song|item|thing)|it|them", cleaned, re.IGNORECASE):
+            return ""
+
         return cleaned or query
 
     def search_wikipedia(self, query: str, limit: int = 2) -> List[Dict[str, Any]]:
@@ -191,6 +213,9 @@ class OmniSearchEngine:
             return []
 
         entity_q = self.clean_entity_query(query)
+        has_specific_entity = bool(set(re.findall(r"\b[a-z0-9]{3,}\b", entity_q.lower())) - self.GENERIC_CATEGORY_WORDS)
+        if not entity_q or not has_specific_entity:
+            return []
         params = {
             "action": "query",
             "generator": "search",
@@ -333,6 +358,11 @@ class OmniSearchEngine:
             if len(images) >= limit:
                 return images
 
+        # Skip external/Commons image search if query has no specific entity (e.g. 'that movie', 'list all actors')
+        has_specific_entity = bool(set(re.findall(r"\b[a-z0-9]{3,}\b", cleaned_entity.lower())) - self.GENERIC_CATEGORY_WORDS)
+        if not cleaned_entity or not has_specific_entity:
+            return []
+
         # 1. Local Image Matching (if images exist in data/images)
         if data_dir:
             images_dir = Path(data_dir) / "images"
@@ -411,7 +441,9 @@ class OmniSearchEngine:
             print(f"[WARN] MediaWiki image search error: {e}")
 
         # 4. Wikimedia Commons API (high-resolution entity photographs, portraits, and diagrams)
-        if len(images) < limit:
+        # Skip generic directive or non-entity queries (e.g. 'that movie', 'list of actors')
+        has_specific_entity = bool(set(re.findall(r"\b[a-z0-9]{3,}\b", cleaned_entity.lower())) - self.GENERIC_CATEGORY_WORDS)
+        if len(images) < limit and has_specific_entity:
             search_terms = [cleaned_entity]
             if any(w in query.lower() for w in ["diagram", "chart", "schema", "architecture", "flowchart"]):
                 search_terms.insert(0, f"{cleaned_entity} diagram")
@@ -459,6 +491,10 @@ class OmniSearchEngine:
                             if w < 160 or h < 160:
                                 continue
 
+                            # Strictly verify that Wikimedia Commons image matches the specific entity
+                            if not self.is_entity_relevant(cleaned_entity, clean_c_title):
+                                continue
+
                             # Shorten verbose archive titles cleanly
                             if len(clean_c_title) > 45:
                                 shortened = re.sub(r"^(?:The\s+President[^\n,]+,\s*)", "", clean_c_title).strip()
@@ -484,8 +520,8 @@ class OmniSearchEngine:
         if self.is_genai_image_query(query):
             genai_img = self.generate_ai_image(cleaned_entity)
             images.insert(0, genai_img)
-        elif not images and cleaned_entity:
-            # Fallback: Synthesize with GenAI so the user always receives a visual!
+        elif not images and cleaned_entity and self.is_pure_image_query(query):
+            # Fallback: Synthesize with GenAI only when user explicitly asked for an image/visual
             genai_img = self.generate_ai_image(f"{cleaned_entity}, photorealistic, high quality, 8k")
             images.append(genai_img)
 
@@ -554,13 +590,212 @@ class OmniSearchEngine:
             print(f"[WARN] Live Web search error: {e}")
         return results
 
-    def search_all(self, query: str, max_results: int = 3) -> List[Dict[str, Any]]:
+    def search_reddit(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+        """Retrieve real-time community discussions, reviews, and sentiment from Reddit."""
+        if self.is_directive_or_meta_query(query):
+            return []
+
+        cleaned_q = self.clean_entity_query(query)
+        if not cleaned_q:
+            return []
+
+        results = []
+        try:
+            from bs4 import BeautifulSoup
+            data = urllib.parse.urlencode({"q": f"site:reddit.com {cleaned_q}"}).encode("utf-8")
+            req = urllib.request.Request(
+                "https://html.duckduckgo.com/html/",
+                data=data,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                soup = BeautifulSoup(resp.read().decode("utf-8", errors="replace"), "html.parser")
+                for r in soup.find_all("div", class_="result__body"):
+                    title_a = r.find("a", class_="result__a")
+                    snippet_a = r.find("a", class_="result__snippet") or r.find("div", class_="result__snippet")
+                    if not title_a or not snippet_a:
+                        continue
+                    title = title_a.text.strip()
+                    snippet = snippet_a.text.strip()
+                    href = title_a.get("href", "")
+                    if "uddg=" in href:
+                        m = re.search(r"uddg=([^&]+)", href)
+                        if m:
+                            href = urllib.parse.unquote(m.group(1))
+
+                    if not href.startswith("http") or len(snippet) < 15:
+                        continue
+
+                    # Extract subreddit if visible (e.g. r/television or r/movies)
+                    sub_match = re.search(r"r/([a-zA-Z0-9_]+)", f"{title} {href}")
+                    sub_label = f"r/{sub_match.group(1)}" if sub_match else "Reddit"
+
+                    results.append({
+                        "source": f"Reddit ({sub_label}): {title[:50]}",
+                        "page": href,
+                        "score": 0.94,
+                        "relevance_pct": 94,
+                        "preview": snippet[:220] + ("..." if len(snippet) > 220 else ""),
+                        "full_text": f"Reddit Community Post ({sub_label}):\nTitle: {title}\nURL: {href}\nDiscussion & Community Sentiment:\n{snippet}",
+                        "retrieval_mode": "social_reddit",
+                        "is_web": True
+                    })
+                    if len(results) >= limit:
+                        break
+        except Exception as e:
+            print(f"[WARN] Reddit search error: {e}")
+        return results
+
+    def search_hackernews(self, query: str, limit: int = 2) -> List[Dict[str, Any]]:
+        """Fetch developer discussions, tech reviews, and startup discourse from Hacker News (Algolia API)."""
+        if self.is_directive_or_meta_query(query):
+            return []
+
+        cleaned_q = self.clean_entity_query(query)
+        if not cleaned_q:
+            return []
+
+        results = []
+        try:
+            encoded_q = urllib.parse.quote(cleaned_q)
+            url = f"https://hn.algolia.com/api/v1/search?query={encoded_q}&tags=story&hitsPerPage={limit + 2}"
+            req = urllib.request.Request(url, headers={"User-Agent": "NexusRAG/1.0 (https://nexusrag.ai)"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8", errors="replace"))
+                for hit in data.get("hits", []):
+                    title = hit.get("title") or ""
+                    story_url = hit.get("url") or f"https://news.ycombinator.com/item?id={hit.get('objectID')}"
+                    points = hit.get("points", 0)
+                    comments = hit.get("num_comments", 0)
+                    author = hit.get("author", "user")
+                    text_snip = hit.get("story_text") or f"{points} points, {comments} comments on Hacker News by {author}"
+
+                    if title:
+                        results.append({
+                            "source": f"Hacker News: {title[:50]}",
+                            "page": story_url,
+                            "score": 0.93,
+                            "relevance_pct": 93,
+                            "preview": f"{points} points, {comments} comments. {title}",
+                            "full_text": f"Hacker News Thread:\nTitle: {title}\nEngagement: {points} points, {comments} comments by @{author}\nURL: {story_url}\n{text_snip}",
+                            "retrieval_mode": "social_hackernews",
+                            "is_web": True
+                        })
+                        if len(results) >= limit:
+                            break
+        except Exception as e:
+            print(f"[WARN] Hacker News search error: {e}")
+        return results
+
+    def search_wikidata(self, query: str, limit: int = 2) -> List[Dict[str, Any]]:
+        """Fetch structured entity claims, taxonomies, and authoritative relations from Wikidata."""
+        if self.is_directive_or_meta_query(query):
+            return []
+
+        cleaned_q = self.clean_entity_query(query)
+        if not cleaned_q:
+            return []
+
+        results = []
+        try:
+            url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+                "action": "wbsearchentities",
+                "search": cleaned_q,
+                "language": "en",
+                "format": "json",
+                "limit": str(limit + 3)
+            })
+            req = urllib.request.Request(url, headers={"User-Agent": "NexusRAG/1.0 (https://nexusrag.ai)"})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8", errors="replace"))
+                for item in data.get("search", []):
+                    label = item.get("label", "")
+                    desc = item.get("description", "")
+                    qid = item.get("id", "")
+                    if label and desc and self.is_entity_relevant(cleaned_q, label, desc):
+                        wiki_url = f"https://www.wikidata.org/wiki/{qid}"
+                        results.append({
+                            "source": f"Wikidata: {label}",
+                            "page": wiki_url,
+                            "score": 0.95,
+                            "relevance_pct": 95,
+                            "preview": f"{label} — {desc} ({qid})",
+                            "full_text": f"Wikidata Entity Knowledge Graph:\nEntity: {label} ({qid})\nDescription: {desc}\nAuthority Link: {wiki_url}",
+                            "retrieval_mode": "live_wikidata",
+                            "is_web": True
+                        })
+                        if len(results) >= limit:
+                            break
+        except Exception as e:
+            print(f"[WARN] Wikidata search error: {e}")
+        return results
+
+    def search_youtube(self, query: str, limit: int = 2) -> List[Dict[str, Any]]:
+        """Fetch video titles, official trailers, teasers, and video summaries from YouTube."""
+        if self.is_directive_or_meta_query(query):
+            return []
+
+        cleaned_q = self.clean_entity_query(query)
+        if not cleaned_q:
+            return []
+
+        results = []
+        try:
+            from bs4 import BeautifulSoup
+            data = urllib.parse.urlencode({"q": f"site:youtube.com {cleaned_q}"}).encode("utf-8")
+            req = urllib.request.Request(
+                "https://html.duckduckgo.com/html/",
+                data=data,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                soup = BeautifulSoup(resp.read().decode("utf-8", errors="replace"), "html.parser")
+                for r in soup.find_all("div", class_="result__body"):
+                    title_a = r.find("a", class_="result__a")
+                    snippet_a = r.find("a", class_="result__snippet") or r.find("div", class_="result__snippet")
+                    if not title_a:
+                        continue
+                    title = title_a.text.strip()
+                    snippet = snippet_a.text.strip() if snippet_a else ""
+                    href = title_a.get("href", "")
+                    if "uddg=" in href:
+                        m = re.search(r"uddg=([^&]+)", href)
+                        if m:
+                            href = urllib.parse.unquote(m.group(1))
+
+                    if "youtube.com/watch" in href or "youtu.be" in href:
+                        clean_t = re.sub(r"\s*-\s*YouTube$", "", title, flags=re.I).strip()
+                        results.append({
+                            "source": f"YouTube: {clean_t[:50]}",
+                            "page": href,
+                            "score": 0.91,
+                            "relevance_pct": 91,
+                            "preview": snippet[:220] if snippet else clean_t,
+                            "full_text": f"YouTube Video Reference:\nTitle: {clean_t}\nURL: {href}\nSummary: {snippet}",
+                            "retrieval_mode": "media_youtube",
+                            "is_web": True
+                        })
+                        if len(results) >= limit:
+                            break
+        except Exception as e:
+            print(f"[WARN] YouTube search error: {e}")
+        return results
+
+    def search_all(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """
         Aggregate multi-source external information across configured providers:
         1. Google Serper (if API key present)
-        2. Real-time Live Web Search (free, fast, live up-to-date web results)
-        3. Wikipedia Knowledge Base (encyclopedic summaries & entities)
-        4. ArXiv Research (restricted to scientific / academic research queries only)
+        2. Real-time Live Web Search (free DuckDuckGo live engine)
+        3. Social Media & Community Discussions (Reddit: reviews, discussions, user sentiment)
+        4. Wikipedia Knowledge Base (encyclopedic summaries & entities)
+        5. Wikidata Structured Knowledge Graph (facts, entity classification, dates)
+        6. Hacker News (tech/coding/developer discourse for technical topics)
+        7. YouTube Media Context (video titles, summaries, official trailers)
+        8. ArXiv Academic Research (academic/scientific/technical queries)
         """
         if self.is_directive_or_meta_query(query):
             return []
@@ -569,20 +804,55 @@ class OmniSearchEngine:
 
         # 1. Check Serper (Google Search) if key configured
         if self.serper_api_key:
-            aggregated.extend(self.search_serper(query, limit=max_results))
+            aggregated.extend(self.search_serper(query, limit=2))
 
         # 2. Real-time Live Web Search (free DuckDuckGo live engine)
         if len(aggregated) < max_results:
-            needed = max_results - len(aggregated)
+            needed = min(2, max_results - len(aggregated))
             live_res = self.search_live_web(query, limit=needed)
             aggregated.extend(live_res)
 
-        # 3. Query Wikipedia Knowledge Base
+        # 3. Social Media & Community Discussions (Reddit) - Essential for human reviews, sentiment, opinions
+        is_community_or_media = bool(re.search(
+            r"\b(review|opinion|worth|cast|actors?|movie|film|series|show|game|product|best|good|recommend|thoughts|issue|experience|reddit)\b",
+            query,
+            re.IGNORECASE
+        ))
+        if len(aggregated) < max_results and (is_community_or_media or len(aggregated) < 2):
+            reddit_res = self.search_reddit(query, limit=2)
+            aggregated.extend(reddit_res)
+
+        # 4. Query Wikipedia Knowledge Base
         if len(aggregated) < max_results:
             wiki_res = self.search_wikipedia(query, limit=2)
             aggregated.extend(wiki_res)
 
-        # 4. Query ArXiv Academic Research (ONLY for academic/scientific/technical queries)
+        # 5. Wikidata Structured Knowledge Graph (exact entity classification & facts)
+        if len(aggregated) < max_results:
+            wikidata_res = self.search_wikidata(query, limit=1)
+            aggregated.extend(wikidata_res)
+
+        # 6. Tech & Developer Social Discourse (Hacker News)
+        is_tech = bool(re.search(
+            r"\b(python|rust|golang|javascript|api|code|coding|software|library|framework|database|ai|llm|rag|postgres|supabase|model|linux|github|hackernews|startup)\b",
+            query,
+            re.IGNORECASE
+        ))
+        if len(aggregated) < max_results and is_tech:
+            hn_res = self.search_hackernews(query, limit=1)
+            aggregated.extend(hn_res)
+
+        # 7. Media & Video Context (YouTube)
+        is_video_or_media = bool(re.search(
+            r"\b(trailer|teaser|video|episode|song|music|talk|tutorial|watch|youtube)\b",
+            query,
+            re.IGNORECASE
+        ))
+        if len(aggregated) < max_results and is_video_or_media:
+            yt_res = self.search_youtube(query, limit=1)
+            aggregated.extend(yt_res)
+
+        # 8. Query ArXiv Academic Research (academic/scientific queries)
         is_academic = bool(re.search(
             r"\b(paper|arxiv|research|algorithm|theorem|proof|quantum|physics|equation|mathematics|dataset|benchmark|neural|nlp|transformer|architecture|deep learning|machine learning)\b",
             query,

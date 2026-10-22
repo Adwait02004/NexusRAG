@@ -263,21 +263,41 @@ section[data-testid="stSidebar"] {
 
 section[data-testid="stSidebar"] > div:first-child,
 section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
+section[data-testid="stSidebar"] {
     height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     overflow-y: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+section[data-testid="stSidebar"] ::-webkit-scrollbar,
+section[data-testid="stSidebar"]::-webkit-scrollbar,
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"]::-webkit-scrollbar,
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"]::-webkit-scrollbar {
+    display: none !important;
+    width: 0px !important;
+    height: 0px !important;
 }
 
 section[data-testid="stSidebar"] .block-container {
     max-width: 100% !important;
-    padding: 1rem 0.85rem 1.2rem 0.85rem !important;
+    padding: 0.75rem 0.85rem 0.75rem 0.85rem !important;
     display: flex !important;
     flex-direction: column !important;
     flex: 1 1 auto !important;
-    min-height: calc(100vh - 2.5rem) !important;
+    min-height: calc(100vh - 2rem) !important;
     height: 100% !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+section[data-testid="stSidebar"] .block-container::-webkit-scrollbar {
+    display: none !important;
+    width: 0px !important;
+    height: 0px !important;
 }
 
 section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"],
@@ -292,7 +312,7 @@ section[data-testid="stSidebar"] div:has(> div[data-testid="stElementContainer"]
 /* Flexible vertical spacer pushing lower controls down */
 .sb-flex-spacer {
     flex-grow: 1 !important;
-    min-height: 40px !important;
+    min-height: 10px !important;
 }
 
 div:has(> .sb-flex-spacer),
@@ -771,7 +791,7 @@ div[data-testid="stSidebar"] div[data-testid="stExpander"] details[open] summary
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    margin-top: 18px;
+    margin-top: 8px;
 }
 
 .sb-status-dot {
@@ -2961,7 +2981,7 @@ pg_mode = getattr(rag.pg_db, "connection_mode", "Connected") if is_pg_live else 
 curr_db_label = f"pgvector ({pg_mode})" if is_pg_live else "FAISS (Local)"
 
 
-def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None, attached_docs=None):
+def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None, attached_docs=None, chat_history=None):
     """Safely invoke search_context handling any in-flight module caching gracefully."""
     sig = inspect.signature(rag_engine.search_context).parameters
     kwargs = {"top_k": top_k, "mode": mode}
@@ -2975,6 +2995,8 @@ def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enabl
         kwargs["tracer"] = tracer
     if "attached_docs" in sig:
         kwargs["attached_docs"] = attached_docs
+    if "chat_history" in sig:
+        kwargs["chat_history"] = chat_history
     return rag_engine.search_context(query, **kwargs)
 
 def safe_stream_query(rag_engine, query, chat_history, top_k, model_name, retrieval_mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None, citations=None, attached_docs=None):
@@ -4036,7 +4058,7 @@ with st.sidebar:
         retrieval_mode = mode_map[retrieval_mode_label]
 
         use_reranker = st.toggle("Cross-Encoder Re-Ranking", value=True, help="Two-stage pipeline with MS-MARCO Cross-Encoder", key="sb_use_reranker")
-        enable_web_search = st.toggle("Live Multi-Source Search", value=True, help="Augment with Wikipedia, ArXiv, and web search", key="sb_web_search")
+        enable_web_search = st.toggle("Live Multi-Source Search", value=True, help="Augment with Live Web, Reddit discussions, Hacker News, Wikidata, Wikipedia, YouTube, and ArXiv", key="sb_web_search")
         decompose_query = st.toggle("Agentic Query Planner", value=True, help="Decompose compound queries into parallel searches")
         verify_hallucinations = st.toggle("Hallucination Guardrail", value=False, help="Self-RAG auditor verifies groundedness")
         enable_llmops_tracer = st.toggle("LLMOps Real-Time Tracing", value=False, help="Track latency waterfall, TTFT, and token cost")
@@ -4430,6 +4452,8 @@ def render_entity_images(images, query: str = "", content: str = ""):
         "days", "tell", "show", "response", "please", "also", "reference",
         "wikipedia", "visual", "asset", "encyclopedia", "image", "photo"
     }
+    generic_words = getattr(OmniSearchEngine, "GENERIC_CATEGORY_WORDS", set())
+    all_ignored = stopwords | generic_words
     context_to_check = f"{query} {content}".lower() if (query or content) else ""
     is_image_query = bool(re.search(r"\b(images?|pictures?|photos?|diagrams?|illustrations?|figures?|visuals?)\b", query, re.IGNORECASE))
     seen_base_urls = set()
@@ -4437,7 +4461,7 @@ def render_entity_images(images, query: str = "", content: str = ""):
     for img in images:
         raw_title = str(img.get("title", ""))
         clean_title = re.sub(r"^File:", "", raw_title).replace("_", " ")
-        clean_title = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp)$", "", clean_title, flags=re.IGNORECASE).strip()
+        clean_title = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp|pdf)$", "", clean_title, flags=re.IGNORECASE).strip()
         full_title = clean_title or "Visual Asset"
         disp_title = (clean_title[:38] + "…") if len(clean_title) > 40 else clean_title
         title = html.escape(full_title)
@@ -4455,10 +4479,12 @@ def render_entity_images(images, query: str = "", content: str = ""):
             continue
         seen_base_urls.add(base_u)
 
-        # If user explicitly asked for images, relax strict filter so all verified images render
-        if not is_image_query and context_to_check:
-            title_words = set(re.findall(r"\b[a-zA-Z0-9]{3,}\b", clean_title.lower())) - stopwords
-            if title_words and not any(w in context_to_check for w in title_words):
+        # If user did not explicitly ask for images, enforce strict substantive entity overlap
+        if not is_image_query:
+            title_words = set(re.findall(r"\b[a-zA-Z0-9]{3,}\b", clean_title.lower())) - all_ignored
+            if not title_words:
+                continue
+            if context_to_check and not any(w in context_to_check for w in title_words):
                 continue
 
         if not (img_url.startswith("http://") or img_url.startswith("https://") or img_url.startswith("data:")):
@@ -4667,7 +4693,8 @@ for idx, msg in enumerate(st.session_state.messages):
 
             if is_img_q and not msg.get("images"):
                 try:
-                    fetched = rag.fetch_entity_images(user_q, limit=6)
+                    prior_hist = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages[:idx]]
+                    fetched = rag.fetch_entity_images(user_q, limit=6, chat_history=prior_hist)
                     if fetched:
                         msg["images"] = fetched
                         if st.session_state.get("current_chat_id"):
@@ -4948,7 +4975,8 @@ if active_query:
                     enable_web_search=enable_web_search,
                     decompose_query=decompose_query,
                     tracer=tracer,
-                    attached_docs=curr_attachments or None
+                    attached_docs=curr_attachments or None,
+                    chat_history=history
                 )
 
             is_pure_image_request = safe_is_pure_image_query(active_query)
@@ -4958,7 +4986,7 @@ if active_query:
             entity_images = []
             if hasattr(rag, "fetch_entity_images"):
                 try:
-                    entity_images = rag.fetch_entity_images(active_query, limit=img_limit)
+                    entity_images = rag.fetch_entity_images(active_query, limit=img_limit, chat_history=history)
                 except Exception as e_img:
                     print(f"[WARN] Error fetching entity images: {e_img}")
 

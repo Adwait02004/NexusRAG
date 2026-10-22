@@ -76,6 +76,40 @@ def sanitize_text(text: str) -> str:
             .replace("\u00a0", " ")
     )
 
+ANAPHORA_PATTERN = re.compile(
+    r"\b(that\s+movie|this\s+movie|the\s+movie|that\s+film|this\s+film|the\s+film|"
+    r"that\s+series|this\s+series|the\s+series|that\s+show|this\s+show|the\s+show|"
+    r"that\s+song|this\s+song|the\s+song|that\s+book|this\s+book|the\s+book|"
+    r"that\s+paper|this\s+paper|the\s+paper|that\s+actor|this\s+actor|"
+    r"it|its|them|that|this)\b",
+    re.IGNORECASE
+)
+
+def contextualize_query(query: str, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
+    """Resolve conversational anaphora and pronouns (e.g. 'that movie' -> 'Mirzapur') using prior chat history."""
+    if not chat_history or not query:
+        return query
+
+    if not ANAPHORA_PATTERN.search(query):
+        return query
+
+    # Find the most recent substantive subject from previous user turns
+    subject = ""
+    for msg in reversed(chat_history):
+        if msg.get("role") == "user":
+            content = msg.get("content", "").strip()
+            clean = re.sub(r"^(?:tell\s+me\s+about|what\s+is|who\s+is|explain|give\s+details\s+on|show\s+me|overview\s+of)\s+", "", content, flags=re.I)
+            clean = re.sub(r"\s+(?:star\s+cast|cast|actors|review|summary|plot|ending|release\s+date|meaning|details)$", "", clean, flags=re.I).strip()
+            if clean and not ANAPHORA_PATTERN.fullmatch(clean):
+                subject = clean
+                break
+
+    if subject:
+        return ANAPHORA_PATTERN.sub(subject, query, count=1)
+
+    return query
+
+
 class RAGSearch:
     def __init__(
         self,
@@ -215,10 +249,11 @@ class RAGSearch:
             self._omni_search = OmniSearchEngine()
         return self._omni_search
 
-    def fetch_entity_images(self, query: str, limit: int = 3) -> List[Dict[str, str]]:
+    def fetch_entity_images(self, query: str, limit: int = 3, chat_history: Optional[List[Dict[str, str]]] = None) -> List[Dict[str, str]]:
         """Fetch visual media, entity portraits, and concept diagrams."""
         try:
-            return self.omni_search.fetch_relevant_images(query, limit=limit, data_dir=self.data_path)
+            effective_q = contextualize_query(query, chat_history)
+            return self.omni_search.fetch_relevant_images(effective_q, limit=limit, data_dir=self.data_path)
         except Exception as e:
             print(f"[WARN] Failed to fetch entity images: {e}")
             return []
@@ -377,13 +412,16 @@ class RAGSearch:
         enable_web_search: bool = True,
         decompose_query: bool = False,
         tracer: Optional[LLMOpsTracer] = None,
-        attached_docs: Optional[List[str]] = None
+        attached_docs: Optional[List[str]] = None,
+        chat_history: Optional[List[Dict[str, str]]] = None
     ) -> List[Dict[str, Any]]:
         """
         Retrieve the top matching document chunks with formatted metadata.
         Modes: 'hybrid' (BM25 + FAISS via RRF), 'dense' (FAISS only), 'sparse' (BM25 only).
-        Supports Agentic Query Decomposition and LLMOps real-time tracing.
+        Supports Agentic Query Decomposition, Chat Contextualization, and LLMOps real-time tracing.
         """
+        effective_query = contextualize_query(query, chat_history) if chat_history else query
+
         # Detect if query explicitly refers to uploaded documents, knowledge vault, or summarization of files
         doc_intent_pattern = re.compile(
             r"\b(uploaded|upload|updated document|updated file|this document|the document|the pdf|the file|"
@@ -397,17 +435,17 @@ class RAGSearch:
             r"give me details|explain in detail|explain this in simple words)\b",
             re.IGNORECASE
         )
-        is_doc_intent = bool(attached_docs) or bool(doc_intent_pattern.search(query))
+        is_doc_intent = bool(attached_docs) or bool(doc_intent_pattern.search(effective_query))
         has_local_docs = bool(self.hybrid.corpus_chunks or (hasattr(self.vectorstore, "metadata") and self.vectorstore.metadata))
 
         # Optional Agentic Query Planning / Decomposition
-        sub_queries = [query]
-        if decompose_query and len(query.strip()) > 20 and not is_doc_intent:
+        sub_queries = [effective_query]
+        if decompose_query and len(effective_query.strip()) > 20 and not is_doc_intent:
             d_span = tracer.start_span("Agentic Query Planner (Decomposition)") if tracer else None
             try:
-                sub_queries = self.guardrail.decompose_query(query, llm=self.get_llm())
+                sub_queries = self.guardrail.decompose_query(effective_query, llm=self.get_llm())
             except Exception:
-                sub_queries = [query]
+                sub_queries = [effective_query]
             if d_span:
                 d_span.finish({"sub_queries": sub_queries})
 
@@ -461,7 +499,7 @@ class RAGSearch:
         # Stage 2: Cross-Encoder Re-Ranking
         s2_span = tracer.start_span("Stage 2 MS-MARCO Cross-Encoder") if tracer else None
         if use_reranker and raw_results and not is_doc_intent:
-            raw_results = self.reranker.rerank(query=query, candidates=raw_results, top_k=top_k)
+            raw_results = self.reranker.rerank(query=effective_query, candidates=raw_results, top_k=top_k)
         else:
             raw_results = raw_results[:top_k]
 
@@ -516,12 +554,12 @@ class RAGSearch:
                     "is_web": False
                 })
 
-        # Stage 3: Live External Search Augmentation (Wikipedia, ArXiv, Google/Serper)
+        # Stage 3: Live External Search Augmentation (Wikipedia, ArXiv, Google/Serper, Reddit, Hacker News, Wikidata, YouTube)
         # Suppress external web search when user is specifically querying their private uploaded documents
-        if enable_web_search and query.strip() and not (is_doc_intent and has_local_docs):
+        if enable_web_search and effective_query.strip() and not (is_doc_intent and has_local_docs):
             s3_span = tracer.start_span("Stage 3 Live External Search (OmniSearch)") if tracer else None
             try:
-                external_results = self.omni_search.search_all(query, max_results=3)
+                external_results = self.omni_search.search_all(effective_query, max_results=5)
                 citations.extend(external_results)
             except Exception as e:
                 print(f"[WARN] External search failed: {e}")
@@ -531,7 +569,7 @@ class RAGSearch:
         # Record audit trail in PostgreSQL if connected
         if hasattr(self, "pg_db") and self.pg_db and self.pg_db.is_connected:
             self.pg_db.log_audit(
-                query_text=query,
+                query_text=effective_query,
                 retrieval_mode=mode,
                 top_chunks_count=len(citations)
             )
@@ -557,9 +595,10 @@ class RAGSearch:
                 "1. Synthesize accurate, comprehensive, and well-structured answers strictly grounded in the provided Context.\n"
                 "2. FACTUAL GROUNDING ON DATES & CREDITS: Always prioritize the release dates, years, artists, singers, and producers stated in the Context.\n"
                 "   - For example, if the context mentions a 2025 release or specific collaborators (e.g., Ali Brothers, Parvej Hussain, Nanku), use those exact facts. NEVER assume or invent an older year (such as 2023) or fictional singers.\n"
-                "3. STRICT PROHIBITION ON CITATIONS & SOURCE NUMBERS: DO NOT write citation tags or source number labels (NEVER write '【Web Source 1】', '[Web Source 1]', 'Web Source 1, 2, 3', '[Doc 1]', '[1]', or any lenticular/bracketed numbers) in your response under ANY circumstances. Do NOT cite or refer to sources by index number. Write pure, natural, fluent narrative prose only.\n"
-                "4. If private documents and web resources both touch on the topic, highlight how they complement each other.\n"
-                "5. UPLOADED DOCUMENT SYNTHESIS: If the user asks about 'the document', 'the updated document', 'the uploaded file', or requests a summary/overview of their files, thoroughly synthesize and explain every major section, concept, pipeline, and method contained in the Context Passages.\n"
+                "3. COMMUNITY & SOCIAL PERSPECTIVES: When Context includes discussions or sentiment from Reddit, Hacker News, or YouTube, synthesize community consensus, viewer reactions, and reviews alongside verified factual encyclopedia records.\n"
+                "4. STRICT PROHIBITION ON CITATIONS & SOURCE NUMBERS: DO NOT write citation tags or source number labels (NEVER write '【Web Source 1】', '[Web Source 1]', 'Web Source 1, 2, 3', '[Doc 1]', '[1]', or any lenticular/bracketed numbers) in your response under ANY circumstances. Do NOT cite or refer to sources by index number. Write pure, natural, fluent narrative prose only.\n"
+                "5. If private documents and web resources both touch on the topic, highlight how they complement each other.\n"
+                "6. UPLOADED DOCUMENT SYNTHESIS: If the user asks about 'the document', 'the updated document', 'the uploaded file', or requests a summary/overview of their files, thoroughly synthesize and explain every major section, concept, pipeline, and method contained in the Context Passages.\n"
             )
             if attached_docs:
                 att_names = ", ".join(attached_docs)
@@ -689,7 +728,8 @@ class RAGSearch:
             mode=retrieval_mode,
             use_reranker=use_reranker,
             enable_web_search=enable_web_search,
-            attached_docs=attached_docs
+            attached_docs=attached_docs,
+            chat_history=chat_history
         )
         if not citations:
             return {
@@ -737,7 +777,8 @@ class RAGSearch:
                 enable_web_search=enable_web_search,
                 decompose_query=decompose_query,
                 tracer=tracer,
-                attached_docs=attached_docs
+                attached_docs=attached_docs,
+                chat_history=chat_history
             )
 
         messages = self._build_prompt_messages(query, citations, chat_history, attached_docs=attached_docs)
@@ -778,3 +819,7 @@ class RAGSearch:
         """Audit answer against citations to detect hallucinations."""
         llm = self.get_llm(model_name=model_name, temperature=0.0)
         return self.guardrail.verify_groundedness(query, answer, citations, llm=llm)
+
+
+# Compatibility alias
+NexusRAG = RAGSearch
