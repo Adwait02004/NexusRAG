@@ -327,8 +327,10 @@ div[data-testid="stElementContainer"]:has(.sb-lower-dock) {
 }
 
 /* New Chat Button (Exact ChatGPT rounded pill) */
-button[data-testid*="btn_new_chat"] {
+button[data-testid*="btn_new_chat"],
+div[class*="st-key-btn_new_chat"] button {
     background: #212121 !important;
+    background-color: #212121 !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     color: #ececec !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
@@ -347,22 +349,27 @@ button[data-testid*="btn_new_chat"] {
     margin: 2px 0 6px 0 !important;
 }
 
-button[data-testid*="btn_new_chat"] p {
+button[data-testid*="btn_new_chat"] p,
+div[class*="st-key-btn_new_chat"] button p {
     color: #ececec !important;
     font-weight: 500 !important;
     font-size: 0.88rem !important;
     margin: 0 !important;
 }
 
-button[data-testid*="btn_new_chat"]:hover {
+button[data-testid*="btn_new_chat"]:hover,
+div[class*="st-key-btn_new_chat"] button:hover {
     background: #2f2f2f !important;
+    background-color: #2f2f2f !important;
     border-color: rgba(255, 255, 255, 0.16) !important;
     transform: none !important;
 }
 
 /* Tool Navigation Buttons (Images & Documents, etc.) */
-button[data-testid*="btn_tool_"] {
+button[data-testid*="btn_tool_"],
+div[class*="st-key-btn_tool_"] button {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     color: #b4b4b4 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
@@ -381,25 +388,31 @@ button[data-testid*="btn_tool_"] {
     margin-bottom: 2px !important;
 }
 
-button[data-testid*="btn_tool_"] p {
+button[data-testid*="btn_tool_"] p,
+div[class*="st-key-btn_tool_"] button p {
     color: #b4b4b4 !important;
     font-weight: 500 !important;
     font-size: 0.86rem !important;
     margin: 0 !important;
 }
 
-button[data-testid*="btn_tool_"]:hover {
+button[data-testid*="btn_tool_"]:hover,
+div[class*="st-key-btn_tool_"] button:hover {
     background: #212121 !important;
+    background-color: #212121 !important;
     color: #ffffff !important;
     transform: none !important;
 }
-button[data-testid*="btn_tool_"]:hover p {
+button[data-testid*="btn_tool_"]:hover p,
+div[class*="st-key-btn_tool_"] button:hover p {
     color: #ffffff !important;
 }
 
 /* Theme Toggle Button (Compact Header Icon) */
-button[data-testid*="btn_theme_toggle"] {
+button[data-testid*="btn_theme_toggle"],
+div[class*="st-key-btn_theme_toggle"] button {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     border-radius: 8px !important;
     height: 34px !important;
@@ -412,11 +425,14 @@ button[data-testid*="btn_theme_toggle"] {
     cursor: pointer !important;
     padding: 0 !important;
     margin: 0 !important;
+    box-shadow: none !important;
     color: #b4b4b4 !important;
 }
 
-button[data-testid*="btn_theme_toggle"]:hover {
+button[data-testid*="btn_theme_toggle"]:hover,
+div[class*="st-key-btn_theme_toggle"] button:hover {
     background: #262626 !important;
+    background-color: #262626 !important;
     color: #ffffff !important;
     transform: none !important;
 }
@@ -1935,49 +1951,64 @@ section[data-testid="stSidebar"] {
     color: #0d0d0d !important;
 }
 
-button[data-testid*="btn_new_chat"] {
+button[data-testid*="btn_new_chat"],
+div[class*="st-key-btn_new_chat"] button {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
     color: #0d0d0d !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
-button[data-testid*="btn_new_chat"] p {
+button[data-testid*="btn_new_chat"] p,
+div[class*="st-key-btn_new_chat"] button p {
     color: #0d0d0d !important;
 }
 
-button[data-testid*="btn_new_chat"]:hover {
+button[data-testid*="btn_new_chat"]:hover,
+div[class*="st-key-btn_new_chat"] button:hover {
     background: #f0f0f0 !important;
+    background-color: #f0f0f0 !important;
     border-color: rgba(0, 0, 0, 0.18) !important;
 }
 
-button[data-testid*="btn_tool_"] {
+button[data-testid*="btn_tool_"],
+div[class*="st-key-btn_tool_"] button {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     color: #5d5d5d !important;
 }
 
-button[data-testid*="btn_tool_"] p {
+button[data-testid*="btn_tool_"] p,
+div[class*="st-key-btn_tool_"] button p {
     color: #5d5d5d !important;
 }
 
-button[data-testid*="btn_tool_"]:hover {
+button[data-testid*="btn_tool_"]:hover,
+div[class*="st-key-btn_tool_"] button:hover {
     background: #ececec !important;
+    background-color: #ececec !important;
     color: #0d0d0d !important;
 }
 
-button[data-testid*="btn_tool_"]:hover p {
+button[data-testid*="btn_tool_"]:hover p,
+div[class*="st-key-btn_tool_"] button:hover p {
     color: #0d0d0d !important;
 }
 
-button[data-testid*="btn_theme_toggle"] {
+button[data-testid*="btn_theme_toggle"],
+div[class*="st-key-btn_theme_toggle"] button {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     color: #5d5d5d !important;
 }
 
-button[data-testid*="btn_theme_toggle"]:hover {
+button[data-testid*="btn_theme_toggle"]:hover,
+div[class*="st-key-btn_theme_toggle"] button:hover {
     background: #ececec !important;
+    background-color: #ececec !important;
     color: #0d0d0d !important;
 }
 
