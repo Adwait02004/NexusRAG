@@ -62,23 +62,32 @@ class ChatHistoryManager:
             except Exception:
                 pass
 
-        # Auto-sync existing local chats to cloud database so both sides see them (runs once per process)
-        if not ChatHistoryManager._initial_sync_done and self.pg_db and self.pg_db.is_connected:
-            ChatHistoryManager._initial_sync_done = True
+        # Auto-sync existing local chats to cloud database so both sides see them
+        if not hasattr(ChatHistoryManager, "_synced_keys"):
+            ChatHistoryManager._synced_keys = set()
+        sync_key = f"{self.user_id}_{id(self.pg_db)}"
+        if sync_key not in ChatHistoryManager._synced_keys and self.pg_db and self.pg_db.is_connected:
+            ChatHistoryManager._synced_keys.add(sync_key)
             try:
                 cloud_chats = self.pg_db.list_chat_sessions(include_archived=True)
                 cloud_ids = {c["id"] for c in cloud_chats}
                 for file_path in self.storage_dir.glob("*.json"):
                     if file_path.stem not in cloud_ids:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            c_data = json.load(f)
-                        self.pg_db.save_chat_session(
-                            c_data.get("id", file_path.stem),
-                            c_data.get("title", "Saved Conversation"),
-                            c_data.get("messages", []),
-                            is_archived=c_data.get("is_archived", False),
-                            user_id=c_data.get("user_id") or self.user_id
-                        )
+                        try:
+                            with open(file_path, "r", encoding="utf-8") as f:
+                                c_data = json.load(f)
+                            target_uid = c_data.get("user_id")
+                            if not target_uid or target_uid == "default_user":
+                                target_uid = self.user_id or "default_user"
+                            self.pg_db.save_chat_session(
+                                c_data.get("id", file_path.stem),
+                                c_data.get("title", "Saved Conversation"),
+                                c_data.get("messages", []),
+                                is_archived=c_data.get("is_archived", False),
+                                user_id=target_uid
+                            )
+                        except Exception:
+                            continue
             except Exception as e_c_sync:
                 print(f"[WARN] Failed to auto-sync local chats to Supabase: {e_c_sync}")
         
@@ -274,6 +283,11 @@ class ChatHistoryManager:
             try:
                 cloud_data = self.pg_db.load_chat_session(chat_id, user_id=self.user_id)
                 if cloud_data:
+                    try:
+                        with open(file_path, "w", encoding="utf-8") as f:
+                            json.dump(cloud_data, f, ensure_ascii=False, indent=2)
+                    except Exception:
+                        pass
                     return cloud_data
             except Exception as e:
                 print(f"[WARN] Failed to load chat from cloud database: {e}")

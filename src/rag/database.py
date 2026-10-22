@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 import json
 import logging
@@ -109,6 +110,7 @@ class PostgresVectorDB:
                 safe_pass = quote_plus(str(self.password))
                 url = f"postgresql+psycopg2://{self.user}:{safe_pass}@{self.host}:{self.port}/{self.database}?sslmode={self.sslmode}"
             
+            # 1. Primary connection attempt
             self.engine = create_engine(
                 url,
                 pool_size=5,
@@ -121,14 +123,63 @@ class PostgresVectorDB:
                 from sqlalchemy import text
                 conn.execute(text("SELECT 1"))
             self._connected = True
+            self.connection_mode = "Direct"
             logger.info(f"Connected to secure PostgreSQL vectorstore at {self.host}:{self.port}/{self.database}")
             if not PostgresVectorDB._schema_initialized:
                 self.init_schema()
                 PostgresVectorDB._schema_initialized = True
-        except Exception as e:
-            self._connected = False
-            self.engine = None
-            logger.warning(f"PostgreSQL not reachable ({e}). Using local in-memory FAISS fallback.")
+        except Exception as e_primary:
+            # 2. Automatic Supabase IPv4 Pooler Fallback
+            # Streamlit Cloud & AWS EC2 lack IPv6 routing to db.<ref>.supabase.co
+            pooler_success = False
+            ref_match = re.search(r"([a-z0-9]{20})", str(self.host) + str(self.database_url or ""))
+            is_supabase = ("supabase" in str(self.host).lower()) or ("supabase" in str(self.database_url or "").lower())
+            if is_supabase:
+                ref = ref_match.group(1) if ref_match else "tfhanwlouknwbsjopbev"
+                from urllib.parse import quote_plus
+                safe_pass = quote_plus(str(self.password))
+                from sqlalchemy import create_engine, text
+                
+                # Check known pooler hosts (ap-northeast-2 is this project's primary region, with fallbacks)
+                candidate_poolers = [
+                    f"aws-0-ap-northeast-2.pooler.supabase.com",
+                    f"aws-0-ap-south-1.pooler.supabase.com",
+                    f"aws-0-us-east-1.pooler.supabase.com"
+                ]
+                for p_host in candidate_poolers:
+                    for p_port in [6543, 5432]:
+                        p_user = f"postgres.{ref}"
+                        p_url = f"postgresql+psycopg2://{p_user}:{safe_pass}@{p_host}:{p_port}/postgres?sslmode=require"
+                        try:
+                            p_engine = create_engine(
+                                p_url,
+                                pool_size=5,
+                                max_overflow=10,
+                                pool_timeout=5,
+                                connect_args={"connect_timeout": 5}
+                            )
+                            with p_engine.connect() as conn:
+                                conn.execute(text("SELECT 1"))
+                            self.engine = p_engine
+                            self._connected = True
+                            self.connection_mode = f"IPv4 Pooler ({p_host}:{p_port})"
+                            logger.info(f"Connected to Supabase via IPv4 Pooler at {p_host}:{p_port}")
+                            if not PostgresVectorDB._schema_initialized:
+                                self.init_schema()
+                                PostgresVectorDB._schema_initialized = True
+                            pooler_success = True
+                            break
+                        except Exception:
+                            continue
+                    if pooler_success:
+                        break
+
+            if not pooler_success:
+                self._connected = False
+                self.engine = None
+                self.connection_mode = "Offline"
+                self.last_error = str(e_primary)
+                logger.warning(f"PostgreSQL not reachable ({e_primary}). Using local in-memory FAISS fallback.")
 
     @property
     def is_connected(self) -> bool:

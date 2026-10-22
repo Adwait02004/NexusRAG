@@ -2753,7 +2753,8 @@ doc_count = len(active_docs)
 total_chunks = stats.get("total_chunks", 0)
 
 is_pg_live = bool(hasattr(rag, "pg_db") and rag.pg_db and rag.pg_db.is_connected)
-curr_db_label = "pgvector (Connected)" if is_pg_live else "FAISS (Local)"
+pg_mode = getattr(rag.pg_db, "connection_mode", "Connected") if is_pg_live else "Offline"
+curr_db_label = f"pgvector ({pg_mode})" if is_pg_live else "FAISS (Local)"
 
 
 def safe_search_context(rag_engine, query, top_k, mode, use_reranker=True, enable_web_search=True, decompose_query=False, tracer=None, attached_docs=None):
