@@ -4479,9 +4479,14 @@ def render_entity_images(images, query: str = "", content: str = ""):
             continue
         seen_base_urls.add(base_u)
 
+        # Always block generic magazines, random archival covers, or generic stock PDF titles
+        if re.search(r"\b(?:The\s+New\s+Movie\s+Magazine|hand-book\s+of\s+Indian|Across\s+India)\b", raw_title, re.IGNORECASE):
+            continue
+
         # If user did not explicitly ask for images, enforce strict substantive entity overlap
         if not is_image_query:
-            title_words = set(re.findall(r"\b[a-zA-Z0-9]{3,}\b", clean_title.lower())) - all_ignored
+            # Only consider substantive alphabetic words (excluding purely numeric years/dates like 1930)
+            title_words = {w for w in re.findall(r"\b[a-z]{3,}\b", clean_title.lower()) if w not in all_ignored}
             if not title_words:
                 continue
             if context_to_check and not any(w in context_to_check for w in title_words):

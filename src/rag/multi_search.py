@@ -48,7 +48,13 @@ class OmniSearchEngine:
         "list", "all", "name", "names", "year", "years", "role", "roles",
         "cover", "pdf", "file", "image", "images", "photo", "photos", "picture", "pictures",
         "that", "this", "from", "with", "about", "what", "which", "who", "whom", "tell",
-        "please", "give", "show", "find", "get", "new", "top", "best", "greatest", "reference"
+        "please", "give", "show", "find", "get", "new", "top", "best", "greatest", "reference",
+        "director", "directors", "direct", "directed", "producer", "producers", "produce", "produced",
+        "writer", "writers", "write", "written", "creator", "creators", "plot", "ending",
+        "budget", "box", "office", "genre", "genres", "soundtrack", "song", "songs",
+        "singer", "singers", "music", "release", "dates", "date", "review", "reviews",
+        "rating", "ratings", "more", "detail", "details", "summary", "summarize", "explained", "explain",
+        "sequel", "prequel", "trailer", "teaser", "dialogue", "dialogues", "scene", "scenes"
     }
 
     @classmethod

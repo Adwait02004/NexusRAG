@@ -81,31 +81,46 @@ ANAPHORA_PATTERN = re.compile(
     r"that\s+series|this\s+series|the\s+series|that\s+show|this\s+show|the\s+show|"
     r"that\s+song|this\s+song|the\s+song|that\s+book|this\s+book|the\s+book|"
     r"that\s+paper|this\s+paper|the\s+paper|that\s+actor|this\s+actor|"
-    r"it|its|them|that|this)\b",
+    r"that\s+story|this\s+story|the\s+story|that\s+character|this\s+character|"
+    r"that\s+topic|this\s+topic|the\s+topic|that\s+project|this\s+project|"
+    r"it|its|them|that|this|the\s+same)\b",
     re.IGNORECASE
 )
 
 def contextualize_query(query: str, chat_history: Optional[List[Dict[str, str]]] = None) -> str:
-    """Resolve conversational anaphora and pronouns (e.g. 'that movie' -> 'Mirzapur') using prior chat history."""
+    """Resolve conversational anaphora and carry forward topic memory from prior turns."""
     if not chat_history or not query:
         return query
 
-    if not ANAPHORA_PATTERN.search(query):
-        return query
+    stopwords = {
+        "the", "and", "for", "with", "from", "about", "what", "which", "who", "whom",
+        "is", "are", "was", "were", "tell", "give", "show", "how", "why", "when", "where"
+    }
+    ignored = stopwords | getattr(OmniSearchEngine, "GENERIC_CATEGORY_WORDS", set())
 
     # Find the most recent substantive subject from previous user turns
     subject = ""
     for msg in reversed(chat_history):
         if msg.get("role") == "user":
             content = msg.get("content", "").strip()
-            clean = re.sub(r"^(?:tell\s+me\s+about|what\s+is|who\s+is|explain|give\s+details\s+on|show\s+me|overview\s+of)\s+", "", content, flags=re.I)
-            clean = re.sub(r"\s+(?:star\s+cast|cast|actors|review|summary|plot|ending|release\s+date|meaning|details)$", "", clean, flags=re.I).strip()
-            if clean and not ANAPHORA_PATTERN.fullmatch(clean):
+            clean = re.sub(r"^(?:tell\s+me\s+(?:about|more\s+about)?|what\s+is|who\s+is|explain|give\s+details\s+on|show\s+me|overview\s+of)\s+", "", content, flags=re.I)
+            clean = re.sub(r"\s+(?:star\s+cast|cast|actors?|review|summary|plot|ending|release\s+date|meaning|details?|director|producers?)$", "", clean, flags=re.I).strip()
+            sub_words = {w for w in re.findall(r"\b[a-z]{3,}\b", clean.lower()) if w not in ignored}
+            if sub_words and not ANAPHORA_PATTERN.fullmatch(clean):
                 subject = clean
                 break
 
-    if subject:
+    if not subject:
+        return query
+
+    # 1. Direct pronoun / anaphoric phrase substitution
+    if ANAPHORA_PATTERN.search(query):
         return ANAPHORA_PATTERN.sub(subject, query, count=1)
+
+    # 2. If the follow-up query has no substantive entity of its own, attach the active topic
+    q_words = {w for w in re.findall(r"\b[a-z]{3,}\b", query.lower()) if w not in ignored}
+    if not q_words:
+        return f"{query} ({subject})"
 
     return query
 
@@ -680,6 +695,13 @@ class RAGSearch:
             "   - Debugging & Refactoring: When debugging user-submitted code, identify the root cause clearly, explain the fix in plain words, and provide the clean corrected code at the proper difficulty level.\n"
         )
 
+        memory_instructions = (
+            "7. MULTI-TURN CONVERSATIONAL MEMORY & TOPIC CONTINUITY (MANDATORY):\n"
+            "   - You are in an active, continuous conversation with the user.\n"
+            "   - ALWAYS retain and carry forward the full context, entities, people, topics, and code discussed in preceding turns.\n"
+            "   - When the user asks follow-up questions (e.g. 'tell me more', 'list the actors', 'who was the director', 'what happened next', or refers to 'it', 'that', 'them', 'this'), you MUST address their question as a direct continuation of the active subject from prior turns.\n"
+        )
+
         system_prompt = (
             "You are an expert AI Assistant equipped with an Omni-Source Retrieval-Augmented Generation (RAG) knowledge engine.\n\n"
             "GUIDELINES:\n"
@@ -688,14 +710,15 @@ class RAGSearch:
             f"{visual_instructions}\n"
             f"{math_instructions}\n"
             f"{code_instructions}\n"
+            f"{memory_instructions}\n"
             f"=== CONTEXT DOCUMENTS & EXTERNAL SOURCES ===\n{context_str}\n============================================="
         )
 
         messages = [SystemMessage(content=system_prompt)]
 
-        # Append previous conversation history if provided
+        # Append previous conversation history if provided (carries forward multi-turn conversation memory)
         if chat_history:
-            for turn in chat_history[-6:]:
+            for turn in chat_history[-16:]:
                 role = turn.get("role")
                 content = turn.get("content", "")
                 if role == "user":
