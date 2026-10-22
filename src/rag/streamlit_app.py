@@ -1983,7 +1983,7 @@ button[data-testid*="btn_theme_toggle"]:hover {
     color: #8e8e8e !important;
 }
 
-/* Recents conversation list in light mode (ZERO BOXES) */
+/* Recents conversation list in light mode (CRISP BLACK FONT & ZERO FLOATING BOXES) */
 section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sb_chat_btn_"]),
 section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-pop_act_"]) {
     background: transparent !important;
@@ -1996,26 +1996,85 @@ section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(div[cl
     background: transparent !important;
 }
 
+/* Inactive Chat Buttons in Light Mode: Crisp Slate Font */
 section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-secondary"],
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="secondary"],
 section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"] {
-    color: #64748b !important;
+    color: #334155 !important;
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
 }
 
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-secondary"] *,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="secondary"] *,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button p,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button span,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button div,
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"] p,
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"] span {
+    color: #334155 !important;
+    font-weight: 500 !important;
+}
+
+/* Hovered Chat Item in Light Mode */
 section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button:hover,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-secondary"]:hover,
 section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"]:hover {
-    color: #0f172a !important;
-    background: transparent !important;
+    color: #000000 !important;
+    background: #f1f5f9 !important;
+    background-color: #f1f5f9 !important;
 }
 
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button:hover *,
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"]:hover * {
+    color: #000000 !important;
+}
+
+/* ACTIVE / OPEN CHAT IN LIGHT MODE: BOLD SOLID BLACK TEXT FONT */
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-primary"],
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="primary"],
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"][data-testid="baseButton-primary"],
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"][kind="primary"] {
+    background: #f1f5f9 !important;
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-primary"] *,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="primary"] *,
 section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-primary"] p,
-section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="primary"] p {
-    color: #0f172a !important;
-    font-weight: 600 !important;
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="primary"] p,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-primary"] span,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="primary"] span,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[data-testid="baseButton-primary"] div,
+section[data-testid="stSidebar"] div[class*="st-key-sb_chat_btn_"] button[kind="primary"] div,
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"][data-testid="baseButton-primary"] *,
+section[data-testid="stSidebar"] button[data-testid*="sb_chat_btn_"][kind="primary"] * {
+    color: #000000 !important;
+    font-weight: 700 !important;
 }
 
+/* Suppress all floating tooltip boxes over the sidebar chat items */
+section[data-testid="stSidebar"] [data-baseweb="tooltip"],
+section[data-testid="stSidebar"] div[data-baseweb="tooltip"],
+div[data-baseweb="tooltip"]:has(div:contains("Tell me")) {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Action Popover Menu (···) */
 section[data-testid="stSidebar"] div[class*="st-key-pop_act_"] button,
 section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sb_chat_btn_"]) div[data-testid="stPopover"] button {
     background: transparent !important;
@@ -2034,7 +2093,7 @@ section[data-testid="stSidebar"] div[class*="st-key-pop_act_"] button:hover p,
 section[data-testid="stSidebar"] div[class*="st-key-pop_act_"] button:hover span,
 section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sb_chat_btn_"]) div[data-testid="stPopover"] button:hover p,
 section[data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-sb_chat_btn_"]) div[data-testid="stPopover"] button:hover span {
-    color: #0f172a !important;
+    color: #000000 !important;
 }
 
 .sb-knowledge-card {
@@ -3198,14 +3257,13 @@ with st.sidebar:
                 col_c_btn, col_c_menu = st.columns([8.6, 1.4], gap="small")
                 with col_c_btn:
                     c_title = c.get("title", "Conversation")
-                    disp_title = (c_title[:24] + "...") if len(c_title) > 26 else c_title
+                    disp_title = (c_title[:28] + "...") if len(c_title) > 30 else c_title
                     btn_kind = "primary" if is_cur else "secondary"
                     if st.button(
                         disp_title,
                         key=f"sb_chat_btn_{c['id']}",
                         type=btn_kind,
-                        use_container_width=True,
-                        help=c_title
+                        use_container_width=True
                     ):
                         if c["id"] != current_id:
                             chat_data = chat_mgr.load_chat(c["id"])
