@@ -479,7 +479,7 @@ class PostgresVectorDB:
             with self.engine.connect() as conn:
                 query = "SELECT id, title, messages, is_archived, created_at, updated_at, user_id FROM chat_sessions WHERE id = :id"
                 params = {"id": chat_id}
-                if user_id:
+                if user_id and str(user_id).strip().lower() != "default_user":
                     query += " AND (LOWER(user_id) = LOWER(:user_id) OR user_id = :user_id)"
                     params["user_id"] = str(user_id).strip()
                 row = conn.execute(text(query), params).fetchone()
@@ -509,7 +509,7 @@ class PostgresVectorDB:
                 params = {}
                 if not include_archived:
                     query += " AND is_archived = FALSE"
-                if user_id:
+                if user_id and str(user_id).strip().lower() != "default_user":
                     query += " AND (LOWER(user_id) = LOWER(:user_id) OR user_id = :user_id)"
                     params["user_id"] = str(user_id).strip()
                 query += " ORDER BY updated_at DESC;"
@@ -523,7 +523,7 @@ class PostgresVectorDB:
                         "updated_at": r[4].timestamp() if r[4] else 0,
                         "message_count": int(r[5]) if r[5] is not None else 0,
                         "is_archived": bool(r[2]),
-                        "user_id": r[6] if len(r) > 6 else user_id
+                        "user_id": r[6] if len(row := r) > 6 else user_id
                     })
                 return chats
         except Exception as e:
@@ -555,7 +555,7 @@ class PostgresVectorDB:
             with self.engine.begin() as conn:
                 query = "DELETE FROM chat_sessions WHERE id = :id"
                 params = {"id": chat_id}
-                if user_id:
+                if user_id and str(user_id).strip().lower() != "default_user":
                     query += " AND user_id = :user_id"
                     params["user_id"] = user_id
                 conn.execute(text(query), params)

@@ -3269,9 +3269,32 @@ NexusRAG Studio fuses your private documents (PDF, DOCX, CSV, Excel, TXT) with r
 # ─── Chat History Manager ─── #
 chat_mgr = ChatHistoryManager(PROJECT_DIR / "data" / "chats", pg_db=getattr(rag, "pg_db", None), user_id=current_user_id)
 if "current_chat_id" not in st.session_state:
-    st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
-    st.session_state.messages = []
-    st.session_state.staged_attachments = []
+    query_chat_id = st.query_params.get("chat_id")
+    loaded_init = None
+    if query_chat_id:
+        loaded_init = chat_mgr.load_chat(query_chat_id)
+        if loaded_init:
+            st.session_state.current_chat_id = query_chat_id
+            st.session_state.messages = loaded_init.get("messages", [])
+            st.session_state.staged_attachments = []
+
+    if loaded_init is None:
+        recent_chats = chat_mgr.list_chats()
+        if recent_chats:
+            most_recent = recent_chats[0]
+            loaded_init = chat_mgr.load_chat(most_recent["id"])
+            if loaded_init:
+                st.session_state.current_chat_id = most_recent["id"]
+                st.session_state.messages = loaded_init.get("messages", [])
+                st.session_state.staged_attachments = []
+                st.query_params["chat_id"] = most_recent["id"]
+
+    if "current_chat_id" not in st.session_state:
+        new_cid = ChatHistoryManager.generate_chat_id()
+        st.session_state.current_chat_id = new_cid
+        st.session_state.messages = []
+        st.session_state.staged_attachments = []
+        st.query_params["chat_id"] = new_cid
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -3866,10 +3889,12 @@ with st.sidebar:
 
     # ── New chat Pill Button ──
     if st.button("New chat", icon=":material/edit_square:", key="btn_new_chat", use_container_width=True):
-        st.session_state.current_chat_id = ChatHistoryManager.generate_chat_id()
+        new_cid = ChatHistoryManager.generate_chat_id()
+        st.session_state.current_chat_id = new_cid
         st.session_state.messages = []
         st.session_state.pop("pending_prompt", None)
         st.session_state.pop("staged_attachments", None)
+        st.query_params["chat_id"] = new_cid
         st.rerun()
 
     # ── Functional Quick Tools ──
@@ -3907,13 +3932,13 @@ with st.sidebar:
                         type=btn_kind,
                         use_container_width=True
                     ):
-                        if c["id"] != current_id:
-                            chat_data = chat_mgr.load_chat(c["id"])
-                            if chat_data:
-                                st.session_state.current_chat_id = c["id"]
-                                st.session_state.messages = chat_data.get("messages", [])
-                                st.session_state["staged_attachments"] = []
-                                st.rerun()
+                        chat_data = chat_mgr.load_chat(c["id"])
+                        if chat_data:
+                            st.session_state.current_chat_id = c["id"]
+                            st.session_state.messages = chat_data.get("messages", [])
+                            st.session_state["staged_attachments"] = []
+                            st.query_params["chat_id"] = c["id"]
+                            st.rerun()
                 with col_c_menu:
                     with st.popover("···", key=f"pop_act_{c['id']}", help="Options"):
                         st.caption(f"{c['title'][:20]}...")

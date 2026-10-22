@@ -119,7 +119,8 @@ class ChatHistoryManager:
         cloud_chats = []
         if self.pg_db and self.pg_db.is_connected:
             try:
-                c_list = self.pg_db.list_chat_sessions(include_archived=include_archived, user_id=self.user_id)
+                query_uid = None if (not clean_uid or clean_uid == "default_user") else self.user_id
+                c_list = self.pg_db.list_chat_sessions(include_archived=include_archived, user_id=query_uid)
                 if c_list:
                     cloud_chats = c_list
             except Exception as e:
@@ -133,7 +134,7 @@ class ChatHistoryManager:
                     with open(file_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
                         file_user_id = str(data.get("user_id", "")).strip().lower()
-                        if clean_uid and file_user_id and file_user_id != clean_uid:
+                        if clean_uid and clean_uid != "default_user" and file_user_id and file_user_id != "default_user" and file_user_id != clean_uid:
                             continue
                         is_archived = data.get("is_archived", False)
                         if not include_archived and is_archived:
@@ -178,7 +179,8 @@ class ChatHistoryManager:
         cloud_archived = []
         if self.pg_db and self.pg_db.is_connected:
             try:
-                cloud_chats = self.pg_db.list_chat_sessions(include_archived=True, user_id=self.user_id)
+                query_uid = None if (not clean_uid or clean_uid == "default_user") else self.user_id
+                cloud_chats = self.pg_db.list_chat_sessions(include_archived=True, user_id=query_uid)
                 cloud_archived = [c for c in cloud_chats if c.get("is_archived")]
             except Exception as e:
                 print(f"[WARN] Failed to list archived chats from cloud database: {e}")
@@ -191,7 +193,7 @@ class ChatHistoryManager:
                     with open(file_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
                         file_user_id = str(data.get("user_id", "")).strip().lower()
-                        if clean_uid and file_user_id and file_user_id != clean_uid:
+                        if clean_uid and clean_uid != "default_user" and file_user_id and file_user_id != "default_user" and file_user_id != clean_uid:
                             continue
                         if data.get("is_archived", False):
                             local_archived.append({
@@ -266,31 +268,51 @@ class ChatHistoryManager:
     def load_chat(self, chat_id: str) -> Optional[Dict[str, Any]]:
         """Load messages and metadata for a specific chat from local or cloud storage."""
         clean_uid = str(self.user_id or "").strip().lower()
-        # 1. Local storage check
+        local_data = None
         file_path = self.storage_dir / f"{chat_id}.json"
+
+        # 1. Local storage check
         if file_path.exists():
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     file_user_id = str(data.get("user_id", "")).strip().lower()
-                    if not clean_uid or not file_user_id or file_user_id == clean_uid:
-                        return data
+                    if not clean_uid or clean_uid == "default_user" or not file_user_id or file_user_id == "default_user" or file_user_id == clean_uid:
+                        local_data = data
             except Exception as e:
                 print(f"[WARN] Failed to read local chat {chat_id}: {e}")
 
-        # 2. Cloud database fallback
+        # 2. Cloud database check
+        cloud_data = None
         if self.pg_db and self.pg_db.is_connected:
             try:
-                cloud_data = self.pg_db.load_chat_session(chat_id, user_id=self.user_id)
-                if cloud_data:
-                    try:
-                        with open(file_path, "w", encoding="utf-8") as f:
-                            json.dump(cloud_data, f, ensure_ascii=False, indent=2)
-                    except Exception:
-                        pass
-                    return cloud_data
+                query_uid = None if (not clean_uid or clean_uid == "default_user") else self.user_id
+                cloud_data = self.pg_db.load_chat_session(chat_id, user_id=query_uid)
+                if not cloud_data and query_uid is not None:
+                    cloud_data = self.pg_db.load_chat_session(chat_id, user_id=None)
             except Exception as e:
                 print(f"[WARN] Failed to load chat from cloud database: {e}")
+
+        # 3. Synchronize: pick version with most messages or latest updates
+        if cloud_data and local_data:
+            c_msgs = len(cloud_data.get("messages", []))
+            l_msgs = len(local_data.get("messages", []))
+            best_data = cloud_data if c_msgs >= l_msgs else local_data
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(best_data, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+            return best_data
+        elif cloud_data:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(cloud_data, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+            return cloud_data
+        elif local_data:
+            return local_data
 
         return None
 
