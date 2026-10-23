@@ -554,8 +554,8 @@ class RAGSearch:
                 "is_web": False
             })
 
-        # Fallback: If filtering eliminated everything but we had Stage 1 local results, preserve top candidates
-        if not citations and raw_results and not any(r.get("is_web") for r in raw_results):
+        # Fallback: Only preserve local candidates if user specifically queried documents or web search is disabled
+        if not citations and raw_results and (is_doc_intent or not enable_web_search) and not any(r.get("is_web") for r in raw_results):
             for top_fallback in raw_results[:top_k]:
                 snippet = top_fallback.get("text", "").strip()
                 citations.append({

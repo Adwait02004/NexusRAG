@@ -65,6 +65,13 @@ class OmniSearchEngine:
         q_norm = query.lower().strip()
         t_norm = title.lower().strip()
 
+        # Block PDFs, documents, books, scanned pages, reports, catalogues, manuals
+        if re.search(r"\b(?:\.pdf|\.djvu|page\d+|hand-book|handbook|report|manual|catalogue|magazine|newsletter|pamphlet|treatise|dissertation|thesis|proceedings|archive\.org|loc\s+gov)\b", t_norm, re.IGNORECASE):
+            return False
+        # Block non-subject artifacts (signatures, maps, icons, logos, stamps, coats of arms)
+        if re.search(r"\b(?:signature|autograph|coat\s+of\s+arms|postage\s+stamp|locator\s+map|icon|logo)\b", t_norm, re.IGNORECASE):
+            return False
+
         stopwords = {
             "the", "and", "for", "with", "from", "about", "what", "which",
             "who", "whom", "this", "that", "song", "album", "music", "video",
@@ -74,23 +81,56 @@ class OmniSearchEngine:
         }
         all_ignored = stopwords | cls.GENERIC_CATEGORY_WORDS
 
-        q_words = set(re.findall(r"\b[a-z0-9]{3,}\b", q_norm)) - all_ignored
-        t_words = set(re.findall(r"\b[a-z0-9]{3,}\b", t_norm)) - all_ignored
-        if not q_words:
-            # If the query only consists of generic words (e.g. 'that movie', 'list all actors'), reject false positives
+        # Extract substantive entity tokens from cleaned entity
+        clean_q = cls.clean_entity_query(query).lower().strip()
+        q_tokens = [w for w in re.findall(r"\b[a-z0-9]{3,}\b", clean_q) if w not in all_ignored]
+        if not q_tokens:
+            q_tokens = [w for w in re.findall(r"\b[a-z0-9]{3,}\b", q_norm) if w not in all_ignored]
+        if not q_tokens:
             return False
 
-        # Only allow substring match if query contains at least one specific entity word
-        if q_norm in t_norm or t_norm in q_norm:
-            if any(w in t_norm for w in q_words):
-                return True
+        q_words = set(q_tokens)
+        t_words_sub = set(re.findall(r"\b[a-z0-9]{3,}\b", t_norm)) - all_ignored
+        t_words_all = set(re.findall(r"\b[a-z0-9]{3,}\b", t_norm))
 
-        if len(q_words.intersection(t_words)) >= 1:
+        # Check exact phrase match (e.g. "sun zara" in "sun zara (song)")
+        if len(clean_q) >= 4 and (clean_q in t_norm or (extract and clean_q in extract[:300].lower())):
+            return True
+
+        # Case 1: Single-word entity query (e.g. "cricket", "python", "virat")
+        if len(q_words) == 1:
+            target_word = list(q_words)[0]
+            if target_word not in t_words_all:
+                return False
+            # Disambiguation filters for common single-word ambiguities
+            if target_word == "cricket" and any(bad in t_norm for bad in ["jiminy", "wireless", "insect", "bawl", "grig", "privilege"]):
+                return False
+            if target_word == "python" and any(bad in t_norm for bad in ["monty", "snake", "ball python", "burmese"]):
+                return False
+            return True
+
+        # Case 2: Two-word entity query (e.g. "sun zara", "virat kohli", "data science")
+        # Strict rule: A single token match (e.g. only "zara" in "Zara Larsson", or only "data" in "Open Data") is NOT sufficient!
+        if len(q_words) == 2:
+            overlap = q_words.intersection(t_words_all)
+            if len(overlap) == 2:
+                return True
+            # Allow 1 word in title ONLY IF the second word is prominently featured in the Wikipedia extract
+            if len(overlap) == 1 and extract:
+                e_tokens = set(re.findall(r"\b[a-z0-9]{3,}\b", extract[:300].lower()))
+                if len(q_words.intersection(e_tokens)) == 2:
+                    return True
+            return False
+
+        # Case 3: Three or more word entity query
+        overlap_all = q_words.intersection(t_words_all)
+        if len(overlap_all) >= max(2, int(len(q_words) * 0.65)):
             return True
 
         if extract:
-            e_norm = extract[:350].lower()
-            if any(w in e_norm for w in q_words) and len(q_words.intersection(set(re.findall(r"\b[a-z0-9]{3,}\b", e_norm)))) >= 1:
+            e_tokens = set(re.findall(r"\b[a-z0-9]{3,}\b", extract[:350].lower()))
+            overlap_ext = q_words.intersection(e_tokens)
+            if len(overlap_ext) >= max(2, int(len(q_words) * 0.65)):
                 return True
 
         return False
@@ -203,6 +243,23 @@ class OmniSearchEngine:
             r"\s+(?:images?|pictures?|photos?|pics?|diagrams?|illustrations?|figures?|visuals?|portraits?|artwork)$",
             "", cleaned, flags=re.IGNORECASE
         ).strip()
+
+        # Strip trailing question intent, attributes, and constraints
+        # e.g., 'music director and singer', 'director and cast', 'release date', 'lyrics', 'in five lines', 'in one paragraph'
+        trailing_attribs = (
+            r"\s+(?:"
+            r"music\s+director(?:\s+and\s+singer)?|singer(?:\s+and\s+music\s+director)?|"
+            r"director|composer|lyricist|lyrics|cast|actors?|actress(?:es)?|starring|producer|"
+            r"budget|box\s+office|release\s+date|meaning|summary|explained|explanation|story|plot|synopsis|"
+            r"in\s+one\s+paragraph|in\s+\d+\s+lines|in\s+five\s+lines|in\s+brief|in\s+detail|details|info|"
+            r"tell\s+me|show\s+me|who\s+is|what\s+is"
+            r")\b.*$"
+        )
+        cleaned = re.sub(trailing_attribs, "", cleaned, flags=re.IGNORECASE).strip()
+
+        # If multi-word, strip trailing category words like 'song', 'movie', 'film' to isolate entity
+        if len(cleaned.split()) > 1:
+            cleaned = re.sub(r"\s+(?:song|movie|film|series|show|track|video)$", "", cleaned, flags=re.IGNORECASE).strip()
 
         # Strip leading prepositions, articles, or remnant qualifiers
         cleaned = re.sub(r"^(?:of|for|about|an?|the|only|just|single)\s+", "", cleaned, flags=re.IGNORECASE).strip()
@@ -484,6 +541,12 @@ class OmniSearchEngine:
                             img_url = info.get("thumburl") or info.get("url")
                             page_url = info.get("descriptionurl", "https://commons.wikimedia.org")
                             raw_c_title = cp.get("title", "")
+                            # Reject any PDF, DjVu, or scanned documents
+                            if re.search(r"\.(?:pdf|djvu|tiff?)$", raw_c_title, re.IGNORECASE) or ".pdf" in (img_url or "").lower():
+                                continue
+                            if re.search(r"\b(?:\.pdf|\.djvu|page\d+|hand-book|handbook|report|manual|catalogue|magazine|newsletter|pamphlet|treatise|dissertation|thesis|proceedings|archive\.org|loc\s+gov)\b", raw_c_title, re.IGNORECASE):
+                                continue
+
                             clean_c_title = re.sub(r"^File:", "", raw_c_title).replace("_", " ")
                             clean_c_title = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp)$", "", clean_c_title, flags=re.IGNORECASE).strip()
 
@@ -508,6 +571,10 @@ class OmniSearchEngine:
                                     clean_c_title = shortened
                                 if len(clean_c_title) > 45:
                                     clean_c_title = clean_c_title[:42] + "..."
+
+                            # Ensure page_url is never empty or '#'
+                            if not page_url or page_url == "#":
+                                page_url = f"https://commons.wikimedia.org/wiki/{urllib.parse.quote(raw_c_title.replace(' ', '_'))}"
 
                             if img_url and not any(existing.get("image_url") == img_url for existing in images):
                                 caption_label = "Wikimedia Commons" if "photo" not in clean_c_title.lower() else "Verified Photo"
@@ -775,6 +842,8 @@ class OmniSearchEngine:
 
                     if "youtube.com/watch" in href or "youtu.be" in href:
                         clean_t = re.sub(r"\s*-\s*YouTube$", "", title, flags=re.I).strip()
+                        vid_id_match = re.search(r"(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})", href)
+                        yt_thumb = f"https://img.youtube.com/vi/{vid_id_match.group(1)}/hqdefault.jpg" if vid_id_match else None
                         results.append({
                             "source": f"YouTube: {clean_t[:50]}",
                             "page": href,
@@ -783,7 +852,8 @@ class OmniSearchEngine:
                             "preview": snippet[:220] if snippet else clean_t,
                             "full_text": f"YouTube Video Reference:\nTitle: {clean_t}\nURL: {href}\nSummary: {snippet}",
                             "retrieval_mode": "media_youtube",
-                            "is_web": True
+                            "is_web": True,
+                            "image_url": yt_thumb
                         })
                         if len(results) >= limit:
                             break

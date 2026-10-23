@@ -1290,6 +1290,130 @@ tr:hover td { background: rgba(99, 102, 241, 0.04) !important; }
     font-family: 'JetBrains Mono', monospace;
 }
 
+.media-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 3px;
+}
+
+.media-card-link-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.15);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    transition: all 0.2s ease;
+}
+
+.media-card:hover .media-card-link-badge {
+    background: rgba(99, 102, 241, 0.3);
+    color: #ffffff;
+    border-color: rgba(99, 102, 241, 0.6);
+}
+
+/* ═══ SOURCES & VERIFIED REFERENCES SECTION ═══ */
+.ref-sources-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #c7d2fe;
+    margin: 16px 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.02em;
+}
+
+.ref-sources-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.ref-source-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #141724;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-decoration: none !important;
+    transition: all 0.22s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ref-source-card:hover {
+    border-color: rgba(99, 102, 241, 0.55);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.2);
+}
+
+.ref-source-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.ref-source-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.src-yt { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+.src-wiki { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.src-wikidata { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.3); }
+.src-reddit { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+.src-hn { background: rgba(234, 88, 12, 0.15); color: #fdba74; border: 1px solid rgba(234, 88, 12, 0.3); }
+.src-arxiv { background: rgba(225, 29, 72, 0.15); color: #fb7185; border: 1px solid rgba(225, 29, 72, 0.3); }
+.src-doc { background: rgba(147, 51, 234, 0.15); color: #c084fc; border: 1px solid rgba(147, 51, 234, 0.3); }
+.src-web { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+.ref-source-score {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.ref-source-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.35;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ref-source-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: #818cf8;
+    font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 5px;
+    margin-top: 2px;
+}
+
+.ref-source-icon {
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
 /* ═══ STREAMLIT CONTROLS & BUTTONS (Main Content & Dialogs) ═══ */
 section:not([data-testid="stSidebar"]) button[kind="secondary"],
 div.main button[kind="secondary"],
@@ -2547,6 +2671,29 @@ tr:hover td {
 }
 .media-card-source {
     color: #4f46e5 !important;
+}
+.media-card-link-badge {
+    background: rgba(79, 70, 229, 0.08) !important;
+    border-color: rgba(79, 70, 229, 0.25) !important;
+    color: #4f46e5 !important;
+}
+.ref-sources-header {
+    color: #3730a3 !important;
+}
+.ref-source-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+.ref-source-title {
+    color: #0f172a !important;
+}
+.ref-source-score {
+    color: #64748b !important;
+}
+.ref-source-link-row {
+    color: #4f46e5 !important;
+    border-top-color: #f1f5f9 !important;
 }
 
 /* Controlled Image Gallery in Light Mode */
@@ -4442,33 +4589,27 @@ def clean_markdown_content(text: str, query: str = "") -> str:
 
 
 def render_entity_images(images, query: str = "", content: str = ""):
-    """Render visual entity cards with rich visual preview."""
+    """Render verified visual entity cards with working external links."""
     if not images:
         return
     cards_html = []
-    stopwords = {
-        "the", "and", "for", "with", "from", "about", "what", "which",
-        "who", "whom", "this", "that", "song", "album", "music", "video",
-        "days", "tell", "show", "response", "please", "also", "reference",
-        "wikipedia", "visual", "asset", "encyclopedia", "image", "photo"
-    }
-    generic_words = getattr(OmniSearchEngine, "GENERIC_CATEGORY_WORDS", set())
-    all_ignored = stopwords | generic_words
-    context_to_check = f"{query} {content}".lower() if (query or content) else ""
-    is_image_query = bool(re.search(r"\b(images?|pictures?|photos?|diagrams?|illustrations?|figures?|visuals?)\b", query, re.IGNORECASE))
     seen_base_urls = set()
 
     for img in images:
         raw_title = str(img.get("title", ""))
+        # Always block generic magazines, random archival covers, PDFs, or generic stock document titles
+        if re.search(r"\b(?:\.pdf|\.djvu|page\d+|hand-book|handbook|report|manual|catalogue|magazine|newsletter|pamphlet|The\s+New\s+Movie\s+Magazine|Across\s+India)\b", raw_title, re.IGNORECASE):
+            continue
+
         clean_title = re.sub(r"^File:", "", raw_title).replace("_", " ")
         clean_title = re.sub(r"\.(svg|png|jpg|jpeg|gif|webp|pdf)$", "", clean_title, flags=re.IGNORECASE).strip()
         full_title = clean_title or "Visual Asset"
-        disp_title = (clean_title[:38] + "…") if len(clean_title) > 40 else clean_title
+        disp_title = (clean_title[:36] + "…") if len(clean_title) > 38 else clean_title
         title = html.escape(full_title)
         disp_title_esc = html.escape(disp_title)
 
         img_url = str(img.get("image_url", ""))
-        src_url = img.get("source_url", "#")
+        src_url = img.get("source_url") or ""
         source_label = html.escape(str(img.get("caption", "Verified Diagram")))
         if not img_url:
             continue
@@ -4479,17 +4620,10 @@ def render_entity_images(images, query: str = "", content: str = ""):
             continue
         seen_base_urls.add(base_u)
 
-        # Always block generic magazines, random archival covers, or generic stock PDF titles
-        if re.search(r"\b(?:The\s+New\s+Movie\s+Magazine|hand-book\s+of\s+Indian|Across\s+India)\b", raw_title, re.IGNORECASE):
-            continue
-
-        # If user did not explicitly ask for images, enforce strict substantive entity overlap
-        if not is_image_query:
-            # Only consider substantive alphabetic words (excluding purely numeric years/dates like 1930)
-            title_words = {w for w in re.findall(r"\b[a-z]{3,}\b", clean_title.lower()) if w not in all_ignored}
-            if not title_words:
-                continue
-            if context_to_check and not any(w in context_to_check for w in title_words):
+        # Enforce strict entity relevance using OmniSearchEngine.is_entity_relevant
+        if hasattr(OmniSearchEngine, "is_entity_relevant"):
+            eval_q = query or content or ""
+            if eval_q and not OmniSearchEngine.is_entity_relevant(eval_q, clean_title):
                 continue
 
         if not (img_url.startswith("http://") or img_url.startswith("https://") or img_url.startswith("data:")):
@@ -4504,13 +4638,23 @@ def render_entity_images(images, query: str = "", content: str = ""):
             except Exception:
                 continue
 
+        # Ensure src_url is an actionable working link
+        if not src_url or src_url == "#":
+            if img_url.startswith("http"):
+                src_url = img_url
+            else:
+                src_url = f"https://www.google.com/search?q={urllib.parse.quote(full_title)}"
+
         card = f'''<a href="{src_url}" target="_blank" rel="noopener noreferrer" class="media-card" title="{title}">
             <div class="media-card-img-wrap">
                 <img src="{img_url}" alt="{title}" loading="lazy" referrerpolicy="no-referrer" />
             </div>
             <div class="media-card-body">
                 <span class="media-card-title">{disp_title_esc}</span>
-                <span class="media-card-source">{source_label}</span>
+                <div class="media-card-footer">
+                    <span class="media-card-source">{source_label}</span>
+                    <span class="media-card-link-badge">Open ↗</span>
+                </div>
             </div>
         </a>'''
         cards_html.append(card)
@@ -4518,6 +4662,95 @@ def render_entity_images(images, query: str = "", content: str = ""):
     if cards_html:
         hdr = '<div class="visual-gallery-header"><span style="color:#6366f1;">❖</span> Visual Media & Reference Gallery</div>'
         st.markdown(f'{hdr}<div class="media-strip">{"".join(cards_html)}</div>', unsafe_allow_html=True)
+
+
+def render_sources_and_references(citations: List[Dict[str, Any]], query: str = ""):
+    """Render verified source references with interactive external links and relevance badges."""
+    if not citations:
+        return
+
+    valid_citations = []
+    seen_urls = set()
+    for c in citations:
+        page = str(c.get("page", "")).strip()
+        source_name = str(c.get("source", "Reference")).strip()
+        # Discard low relevance or non-matching fallback items
+        if c.get("relevance_pct", 0) <= 15:
+            continue
+        # Discard irrelevant local document fallback if query had nothing to do with data science or documents
+        if not c.get("is_web") and "essentials_of_data_science" in source_name.lower():
+            if not any(w in (query or "").lower() for w in ["data", "science", "statistics", "dataset", "document", "pdf", "file"]):
+                continue
+
+        url_key = page.lower() if page.startswith("http") else source_name.lower()
+        if url_key in seen_urls:
+            continue
+        seen_urls.add(url_key)
+        valid_citations.append(c)
+
+    if not valid_citations:
+        return
+
+    chips_html = []
+    for c in valid_citations:
+        source_name = html.escape(c.get("source", "Reference"))
+        page = c.get("page", "")
+        is_web = c.get("is_web", False)
+        rel_pct = c.get("relevance_pct", 92)
+        preview = html.escape((c.get("preview") or "")[:180])
+
+        badge_cls = "src-web"
+        badge_icon = "🌐"
+        badge_label = "Web Source"
+        link_url = page if (isinstance(page, str) and page.startswith("http")) else "#"
+
+        if "youtube.com" in link_url or "youtu.be" in link_url:
+            badge_cls = "src-yt"
+            badge_icon = "▶"
+            badge_label = "YouTube"
+        elif "wikipedia.org" in link_url:
+            badge_cls = "src-wiki"
+            badge_icon = "W"
+            badge_label = "Wikipedia"
+        elif "wikidata.org" in link_url:
+            badge_cls = "src-wikidata"
+            badge_icon = "❖"
+            badge_label = "Wikidata"
+        elif "reddit.com" in link_url:
+            badge_cls = "src-reddit"
+            badge_icon = "●"
+            badge_label = "Reddit"
+        elif "news.ycombinator.com" in link_url:
+            badge_cls = "src-hn"
+            badge_icon = "Y"
+            badge_label = "Hacker News"
+        elif "arxiv.org" in link_url:
+            badge_cls = "src-arxiv"
+            badge_icon = "◆"
+            badge_label = "ArXiv"
+        elif not is_web:
+            badge_cls = "src-doc"
+            badge_icon = "📄"
+            badge_label = f"Document (p. {page})"
+            link_url = "#"
+
+        target_attr = 'target="_blank" rel="noopener noreferrer"' if link_url != "#" else ''
+        chip = f'''<a href="{link_url}" {target_attr} class="ref-source-card" title="{preview}">
+            <div class="ref-source-top">
+                <span class="ref-source-badge {badge_cls}">{badge_icon} {badge_label}</span>
+                <span class="ref-source-score">{rel_pct}% match</span>
+            </div>
+            <div class="ref-source-title">{source_name}</div>
+            <div class="ref-source-link-row">
+                <span class="ref-source-url">{html.escape(link_url[:42] + ('…' if len(link_url) > 42 else '')) if link_url != '#' else 'Knowledge Vault'}</span>
+                <span class="ref-source-icon">↗</span>
+            </div>
+        </a>'''
+        chips_html.append(chip)
+
+    if chips_html:
+        hdr = '<div class="ref-sources-header"><span style="color:#818cf8;">📚</span> Sources & Verified References</div>'
+        st.markdown(f'{hdr}<div class="ref-sources-strip">{"".join(chips_html)}</div>', unsafe_allow_html=True)
 
 
 # =====================================================================
@@ -4734,12 +4967,24 @@ for idx, msg in enumerate(st.session_state.messages):
                             cap_text = f"{clean_t} • {img.get('caption', 'Visual Asset')}"
                             try:
                                 st.image(img["image_url"], caption=cap_text, use_container_width=True)
+                                source_link = img.get("source_url") or img.get("image_url")
+                                if source_link and source_link != "#":
+                                    st.markdown(f'''
+                                        <div style="margin-top:-6px; margin-bottom:10px; text-align:center;">
+                                            <a href="{source_link}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#818cf8; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px; background:rgba(99,102,241,0.08); padding:3px 9px; border-radius:6px; border:1px solid rgba(99,102,241,0.25);">
+                                                <span>Open Source</span> ↗
+                                            </a>
+                                        </div>
+                                    ''', unsafe_allow_html=True)
                             except Exception:
                                 pass
                     if len(display_imgs) > num_cols:
                         render_entity_images(display_imgs[num_cols:], query=user_q, content=asst_text)
                 else:
                     render_entity_images(msg["images"], query=user_q, content=asst_text)
+
+            if msg.get("citations"):
+                render_sources_and_references(msg["citations"], query=user_q)
 
             if verify_hallucinations and msg.get("grounding"):
                 g = msg["grounding"]
@@ -5035,6 +5280,15 @@ if active_query:
                             cap_text = f"{clean_t} • {img.get('caption', 'Visual Asset')}"
                             try:
                                 st.image(img["image_url"], caption=cap_text, use_container_width=True)
+                                source_link = img.get("source_url") or img.get("image_url")
+                                if source_link and source_link != "#":
+                                    st.markdown(f'''
+                                        <div style="margin-top:-6px; margin-bottom:10px; text-align:center;">
+                                            <a href="{source_link}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#818cf8; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px; background:rgba(99,102,241,0.08); padding:3px 9px; border-radius:6px; border:1px solid rgba(99,102,241,0.25);">
+                                                <span>Open Source</span> ↗
+                                            </a>
+                                        </div>
+                                    ''', unsafe_allow_html=True)
                             except Exception:
                                 pass
 
@@ -5048,6 +5302,9 @@ if active_query:
                 # Also render remaining images as media cards
                 if len(display_imgs) > num_cols:
                     render_entity_images(display_imgs[num_cols:], query=active_query, content=full_response)
+
+                if citations:
+                    render_sources_and_references(citations, query=active_query)
 
             else:
                 # ── STANDARD QUERY: Stream LLM response + optional image cards ──
@@ -5125,10 +5382,22 @@ if active_query:
                                 cap_t = f"{clean_t} • {img.get('caption', 'Visual Asset')}"
                                 try:
                                     st.image(img["image_url"], caption=cap_t, use_container_width=True)
+                                    source_link = img.get("source_url") or img.get("image_url")
+                                    if source_link and source_link != "#":
+                                        st.markdown(f'''
+                                            <div style="margin-top:-6px; margin-bottom:10px; text-align:center;">
+                                                <a href="{source_link}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; color:#818cf8; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px; background:rgba(99,102,241,0.08); padding:3px 9px; border-radius:6px; border:1px solid rgba(99,102,241,0.25);">
+                                                    <span>Open Source</span> ↗
+                                                </a>
+                                            </div>
+                                        ''', unsafe_allow_html=True)
                                 except Exception:
                                     pass
                     if len(display_imgs) > 3 or not is_image_query:
                         render_entity_images(entity_images, query=active_query, content=full_response)
+
+                if citations:
+                    render_sources_and_references(citations, query=active_query)
 
             if verify_hallucinations and full_response:
                 with st.spinner("Self-RAG Guardrail: Auditing groundedness..."):
