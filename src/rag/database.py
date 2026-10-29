@@ -244,6 +244,12 @@ class PostgresVectorDB:
             user_id VARCHAR(100) DEFAULT 'default_user'
         );
         ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS user_id VARCHAR(100) DEFAULT 'default_user';
+
+        -- 7. Enable Row Level Security (RLS) to enforce Supabase Security Advisor compliance
+        ALTER TABLE IF EXISTS chat_sessions ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE IF EXISTS documents ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE IF EXISTS document_chunks ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE IF EXISTS audit_logs ENABLE ROW LEVEL SECURITY;
         """
         try:
             with self.engine.begin() as conn:
